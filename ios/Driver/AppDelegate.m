@@ -8,6 +8,8 @@
 #import "AppDelegate.h"
 #import <GoogleMaps/GoogleMaps.h>
 #import <Firebase.h>
+@import GooglePlaces;
+@import GoogleMaps;
 
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTRootView.h>
@@ -16,7 +18,8 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  [GMSServices provideAPIKey:@"AIzaSyBIXZvDmynO3bT7i_Yck7knF5wgOVyj5Fk"];
+  [GMSServices provideAPIKey:@"AIzaSyAOSE5Gp7I6t0nTdxUqxhmp4DIb-UL998A "];
+  [GMSPlacesClient provideAPIKey:@"AIzaSyAOSE5Gp7I6t0nTdxUqxhmp4DIb-UL998A"];
   [FIRApp configure];
   NSURL *jsCodeLocation;
 
