@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity, ActivityIndicator, AsyncStorage, Al
 import { Card, Button, Text } from "react-native-elements";
 import { onSignOut, USER } from "../auth";
 import { db } from "../../config/MyFirebase";
+import firebase from 'react-native-firebase';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { listenUserName } from "../../config/database";
 import RNGooglePlaces from 'react-native-google-places';
@@ -31,6 +32,20 @@ export default class Home extends Component {
   }
 
   componentDidMount() {
+    let user = firebase.auth().currentUser;
+    console.log(user.uid)
+
+    // Store your device Token In Firebase
+    firebase.messaging().getToken()
+      .then(fcmToken => {
+            if (fcmToken) {
+                console.log(fcmToken)
+              } 
+            else {
+                console.log('No Token')
+              } 
+          });
+
     console.log('Is this Navigator working at all')
     // For some reasons, this function finishes before database listener in the constructor
     // But in our Slow Itel, this function gets called only after the constructor is finished
@@ -61,7 +76,7 @@ export default class Home extends Component {
 
         Alert.alert(error.message)
       },
-      { enableHighAccuracy: true, timeout: 20000 },
+      { timeout: 20000, maximumAge: 60000 },
     );
 
 

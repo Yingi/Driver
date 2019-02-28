@@ -66,7 +66,10 @@ export default class App extends Component {
       // Process your notification as required
       notification
         .android.setChannelId('test-channel')
-        .android.setSmallIcon('ic_launcher');
+        .android.setSmallIcon('ic_launcher')
+        .android.setPriority(firebase.notifications.Android.Priority.Max)
+        .setSound('default')
+
       firebase.notifications()
         .displayNotification(notification);
 
