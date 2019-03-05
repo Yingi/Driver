@@ -4,7 +4,7 @@ import React, { Component } from "react";
 import { RootNavigator } from "./config/router";
 import Spinner from 'react-native-spinkit';
 import firebase from 'react-native-firebase';
-import { Image, Alert, View } from 'react-native';
+import { Image, Alert, View, AsyncStorage } from 'react-native';
 import type { Notification, NotificationOpen } from 'react-native-firebase';
 
 
@@ -36,9 +36,10 @@ export default class App extends Component {
   };
 
 
-
-  async componentDidMount() {
-    const notificationOpen: NotificationOpen = await firebase.notifications().getInitialNotification();
+    
+async componentDidMount() {
+  this.checkPermission();
+  const notificationOpen: NotificationOpen = await firebase.notifications().getInitialNotification();
     if (notificationOpen) {
       const action = notificationOpen.action;
       const notification: Notification = notificationOpen.notification;
@@ -64,11 +65,15 @@ export default class App extends Component {
     });
     this.notificationListener = firebase.notifications().onNotification((notification: Notification) => {
       // Process your notification as required
+      const { title, body } = notification;
       notification
         .android.setChannelId('test-channel')
         .android.setSmallIcon('ic_launcher')
         .android.setPriority(firebase.notifications.Android.Priority.Max)
         .setSound('default')
+
+        console.log(notification.data)
+        this.showAlert(title, body);
 
       firebase.notifications()
         .displayNotification(notification);
@@ -93,14 +98,64 @@ export default class App extends Component {
         firebase.notifications().removeDeliveredNotification(notification.notificationId);
 
       });
-  }
+}
 
-  componentWillUnmount() {
+
+
+
+async checkPermission() {
+  const enabled = await firebase.messaging().hasPermission();
+  if (enabled) {
+      this.getToken();
+  } else {
+      this.requestPermission();
+  }
+}
+
+async requestPermission() {
+  try {
+      await firebase.messaging().requestPermission();
+      // User has authorised
+      this.getToken();
+  } catch (error) {
+      // User has rejected permissions
+      console.log('permission rejected');
+  }
+}
+
+async getToken() {
+  let fcmToken = await AsyncStorage.getItem('fcmToken', value);
+  if (!fcmToken) {
+      fcmToken = await firebase.messaging().getToken();
+      if (fcmToken) {
+          // user has a device token
+          console.log('Has Device Token')
+          await AsyncStorage.setItem('fcmToken', fcmToken);
+      }
+  }
+}
+
+
+
+componentWillUnmount() {
     this.notificationDisplayedListener();
     this.notificationListener();
     this.notificationOpenedListener();
     console.log('Unmounting')
   }
+
+
+  
+
+showAlert(title, body) {
+  Alert.alert(
+    title, body,
+    [
+        { text: 'OK', onPress: () => console.log('OK Pressed') },
+    ],
+    { cancelable: false },
+  );
+}
 
 
   render() {

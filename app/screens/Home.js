@@ -32,6 +32,7 @@ export default class Home extends Component {
   }
 
   componentDidMount() {
+    
     let user = firebase.auth().currentUser;
     console.log(user.uid)
 
