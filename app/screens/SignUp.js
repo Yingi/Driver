@@ -201,7 +201,7 @@ export default class SignUp extends Component {
     //let DriverId = '-LOgt93XjWGZx15IxJJA'
 
     dataBase = firebase.firestore()
-    dataBase.collection('users').doc(user.uid).set({
+    dataBase.collection('drivers').doc(user.uid).set({
       FirstName: this.state.firstname,
       LastName: this.state.lastname,
       PhoneNumber: this.state.phoneNumber,

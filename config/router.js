@@ -4,6 +4,7 @@ import { createStackNavigator, createDrawerNavigator } from "react-navigation";
 import SignIn from "../app/screens/SignIn";
 import SignUp from "../app/screens/SignUp";
 import Home from "../app/screens/Home";
+import NotifyMe from "../app/screens/NotifyMe";
 import MyProfile from "../app/screens/MyProfile";
 import MyNotificationsScreen from "../app/screens/MyNotificationsScreen";
 import ForgotPassword from "../app/screens/ForgotPassword";
@@ -15,6 +16,9 @@ import DrawerComponent from './DrawerContent'
 export const MyApp = createStackNavigator({
     Main: {
         screen: Home
+    },
+    NotifyMe: {
+        screen: NotifyMe
     }
 },
     {

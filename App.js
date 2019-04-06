@@ -5,7 +5,10 @@ import { RootNavigator } from "./config/router";
 import Spinner from 'react-native-spinkit';
 import firebase from 'react-native-firebase';
 import { Image, Alert, View, AsyncStorage } from 'react-native';
+
 import type { Notification, NotificationOpen } from 'react-native-firebase';
+import NavigationService from './NavigationService';
+import { createStackNavigator, createAppContainer } from 'react-navigation';
 
 
 export default class App extends Component {
@@ -73,7 +76,12 @@ async componentDidMount() {
         .setSound('default')
 
         console.log(notification.data)
-        this.showAlert(title, body);
+
+        //Dispatch to Screen Where u want the Notification Data Displayed
+        NavigationService.navigate("Main", {data: notification.data })
+        console.log('Navigated')
+
+        //this.showAlert(title, body);
 
       firebase.notifications()
         .displayNotification(notification);
@@ -215,11 +223,16 @@ showAlert(title, body) {
 
     // Sends signedIn state as parameter to Navigator in router.js file
     const Layout = RootNavigator(this.state.isAuthenticated);
+    const AppContainer = createAppContainer(Layout);
 
 
     return (
-
-      <Layout />
+      <AppContainer
+        ref={Layout => {
+          NavigationService.setTopLevelNavigator(Layout);
+        }}
+      />
+      //<Layout />
 
     )
 

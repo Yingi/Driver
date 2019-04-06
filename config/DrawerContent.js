@@ -7,7 +7,8 @@ import { db } from "./MyFirebase";
 import { Button } from "react-native-elements";
 import ImagePicker from 'react-native-image-crop-picker';
 import { saveImage } from "./database";
-import { onSignOut } from "../app/auth"
+import { onSignOut } from "../app/auth";
+import NavigationService from '../NavigationService';
 
 export default class DrawerComponent extends React.PureComponent {
     constructor(props) {
@@ -65,6 +66,8 @@ export default class DrawerComponent extends React.PureComponent {
             .then(() => this.props.navigation.navigate("SignedOut"))
     }
 
+   
+
     renderImage(image) {
         return (
             <Image
@@ -112,6 +115,7 @@ export default class DrawerComponent extends React.PureComponent {
                         title="SIGN OUT"
                         onPress={this.SignOut.bind(this)}
                     />
+                    
                 </Content>
             </Container>
         )

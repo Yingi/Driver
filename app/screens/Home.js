@@ -1,15 +1,17 @@
 import React, { Component } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator, AsyncStorage, Alert } from "react-native";
+import { View, Platform, PermissionsAndroid, StyleSheet, TouchableOpacity, ActivityIndicator, AsyncStorage, Alert } from "react-native";
 import { Card, Button, Text } from "react-native-elements";
 import { onSignOut, USER } from "../auth";
 import { db } from "../../config/MyFirebase";
 import firebase from 'react-native-firebase';
+import Geolocation from 'react-native-geolocation-service';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { listenUserName } from "../../config/database";
 import RNGooglePlaces from 'react-native-google-places';
 import MapViewDirections from 'react-native-maps-directions';
 import { Container, Icon, Left, Header, Body, Right } from 'native-base';
 import Spinner from 'react-native-spinkit';
+import NavigationService from '../../NavigationService';
 
 
 
@@ -25,16 +27,32 @@ export default class Home extends Component {
       driverLoading: true,
       isAuthenticated: false,
       Name: "",
-      isMapReady: false
+      isMapReady: false,
+      NotificationData: this.props.navigation.getParam('data', 'No_data'),
+      PassengerAvailable: false
 
     }
+    console.log('fresh')
+    
 
   }
 
+  
+  componentWillReceiveProps(nextProps) {
+    console.log(nextProps)
+    console.log(nextProps.navigation.state.params.data.ID)
+    let data = nextProps.navigation.state.params.data
+    this.setState({NotificationData: data, PassengerAvailable: true})
+  }
   componentDidMount() {
+
+    console.log(this.state.NotificationData)
+
+    
     
     let user = firebase.auth().currentUser;
     console.log(user.uid)
+    console.log(this.state.NotificationData)
 
     // Store your device Token In Firebase
     firebase.messaging().getToken()
@@ -51,11 +69,12 @@ export default class Home extends Component {
     // For some reasons, this function finishes before database listener in the constructor
     // But in our Slow Itel, this function gets called only after the constructor is finished
     // So we need to set up isloading here after component DidMount
-    navigator.geolocation.getCurrentPosition(
+    Geolocation.getCurrentPosition(
       (position) => {
 
         // For some reason navigator refused to work on this itel phone
         console.log('What is goin on here itel')
+        console.log(this.state.NotificationData)
         if (this.isUnmounted) {
           return;
         }
@@ -77,7 +96,7 @@ export default class Home extends Component {
 
         Alert.alert(error.message)
       },
-      { timeout: 20000, maximumAge: 60000 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
     );
 
 
@@ -87,6 +106,7 @@ export default class Home extends Component {
     this.isUnmounted = true;
   }
 
+  
 
   SignOut = () => {
     firebase.auth().signOut()
@@ -100,9 +120,7 @@ export default class Home extends Component {
   }
 
 
-  onSearchPlace = () => {
-    this.props.navigation.navigate("SearchPlace");
-  }
+  
 
   render() {
     if (this.state.isLoading) {
@@ -160,8 +178,8 @@ export default class Home extends Component {
           <Header transparent>
             <Left>
 
-              <Icon name="ios-menu" onPress={() =>
-                this.props.navigation.openDrawer()} />
+              <Icon name="ios-menu" onPress={() =>this.props.navigation.openDrawer()
+                } />
 
             </Left>
             <Body />
@@ -171,7 +189,7 @@ export default class Home extends Component {
           { // Below is what gets data from redux store 
           }
 
-
+        
 
         </Container>
       )
@@ -180,7 +198,9 @@ export default class Home extends Component {
   }
 }
 const styles = StyleSheet.create({
-
+  buttonsContainer: {
+    alignItems: 'center'
+  },
   map: { ...StyleSheet.absoluteFillObject },
   horizontal: {
     flexDirection: 'row',
