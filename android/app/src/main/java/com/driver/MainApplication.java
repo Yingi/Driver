@@ -10,6 +10,7 @@ import com.oblador.vectoricons.VectorIconsPackage;
 import io.invertase.firebase.RNFirebasePackage;
 import io.invertase.firebase.auth.RNFirebaseAuthPackage;
 import io.invertase.firebase.database.RNFirebaseDatabasePackage;
+import io.invertase.firebase.firestore.RNFirebaseFirestorePackage;
 import io.invertase.firebase.messaging.RNFirebaseMessagingPackage;
 import io.invertase.firebase.notifications.RNFirebaseNotificationsPackage;
 import com.arttitude360.reactnative.rngoogleplaces.RNGooglePlacesPackage;
@@ -43,6 +44,7 @@ public class MainApplication extends Application implements ReactApplication {
             new RNFirebasePackage(),
             new RNFirebaseAuthPackage(),
             new RNFirebaseDatabasePackage(),
+            new RNFirebaseFirestorePackage(),
             new RNFirebaseMessagingPackage(),
             new RNFirebaseNotificationsPackage(),
             new RNGooglePlacesPackage(),
