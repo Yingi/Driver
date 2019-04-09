@@ -146,7 +146,7 @@ export default class Home extends Component {
     let RideRef = dataBase.collection('ride-request').doc(key)
     RideRef.collection('RideStatus').doc(key).update({ status: 'accepted' })
 
-    NavigationService.navigate("Enroute", {PassengerLocation: Location })
+    NavigationService.navigate("Enroute", {PassengerLocation: Location, data: this.state.NotificationData})
 
 
   }
