@@ -47,11 +47,21 @@ export default class Home extends Component {
     let data = nextProps.navigation.state.params.data
 
     //Get Passenger Photo
-
+    
     this.Photo(PassengerID)
 
+    const PresentLocation = { latitude: this.state.MyLocationLat, longitude: this.state.MyLocationLong }
+    const GOOGLE_MAPS_APIKEY = 'AIzaSyBIXZvDmynO3bT7i_Yck7knF5wgOVyj5Fk';
+    const NotificationInfo = data
+    const PassengerLocation = {latitude: parseFloat(NotificationInfo.Lat), longitude: parseFloat(NotificationInfo.Long)}
+
+      //this.mergeCoords(PresentLocation, PassengerLocation);
 
     this.setState({NotificationData: data, PassengerAvailable: true})
+
+    this.mergeCoords(PresentLocation, PassengerLocation);
+
+    this.Distance(PresentLocation, PassengerLocation);
 
   }
   componentDidMount() {
@@ -151,6 +161,51 @@ export default class Home extends Component {
 
   }
 
+  mergeCoords = (origin, destination) => {
+
+        let concatOrigin = origin.latitude + "," + origin.longitude
+        let concatDest = destination.latitude + "," + destination.longitude
+        this.setState({
+            concatOrigin: concatOrigin,
+            concatDest: concatDest
+        });
+    }
+
+  Distance = (origin, destination) => {
+    
+    let API_KEY = 'AIzaSyBIXZvDmynO3bT7i_Yck7knF5wgOVyj5Fk'
+    fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${this.state.concatOrigin}&destinations=${this.state.concatDest}&key=${API_KEY}`)
+      .then(response =>
+            response.json())
+      .then(responseJson => {
+          // After getting the distanceMatrix, we will now use it
+          // to calculate the fare and then set price for auto and
+          // car and then set duration and distance too
+          console.log('It is search look')
+          console.log(responseJson)
+
+
+          // Temporarily set state so map will show because unpaid distance matrix api will give an error
+          // Remember these are default duration and distance because we havent paid distanceMatrix API
+          this.setState({ done: true, duration: '10mins', distance: '5km' })
+          let dsKm = responseJson.rows[0].elements[0].distance.text
+          let dsM = responseJson.rows[0].elements[0].distance.value
+          let duration = responseJson.rows[0].elements[0].duration.text
+          
+
+          console.log(dsKm);
+
+            // Setting state will only work here if the above doesnt give an error
+          this.setState({
+            duration: duration,
+            distance: dsKm,
+            done: true
+            })
+        })
+        .catch(error => console.log(error))
+
+  }
+
   Photo(key) {
         let dbStorage = db.storage()
         const { PassengerPhotoUrl } = this.state;
@@ -166,6 +221,11 @@ export default class Home extends Component {
 
         });
         return (PassengerPhotoUrl)
+    }
+
+    callUpon = () => {
+      console.log('Show')
+      this.setState({gab: 'man'})
     }
 
    renderDefaultImage(key) {
@@ -188,6 +248,21 @@ export default class Home extends Component {
                     source={{ uri: PassengerPhotoUrl }} />
             )
 
+        }
+    }
+
+    renderElement() {
+        if(this.state.done) {
+          return(
+           <View>
+          <Text style={styles.distanceTextStyle}>{this.state.distance}</Text>
+          <Text style={styles.distanceTextStyle}>{this.state.duration} away</Text>
+          </View>
+          )
+
+        }
+        else {
+          return null;
         }
     }
 
@@ -227,6 +302,13 @@ export default class Home extends Component {
       const NotificationInfo = this.state.NotificationData
       const PassengerLocation = {latitude: parseFloat(NotificationInfo.Lat), longitude: parseFloat(NotificationInfo.Long)}
 
+      //this.mergeCoords(PresentLocation, PassengerLocation);
+
+      //this.Distance(PresentLocation, PassengerLocation);
+
+      //this.callUpon()
+
+      
       return (
         <Container>
           <MapView
@@ -261,13 +343,14 @@ export default class Home extends Component {
                     headerLayoutHeight={100}
                     headerLayout={() =>
                         <View style={styles.headerLayoutStyle}>
+                            {this.renderElement()}
                             {this.renderDefaultImage(NotificationInfo.ID)}
-                            <Text style={styles.driverTextStyle}>{NotificationInfo.Name}</Text>
+                            <Text style={styles.driverTextStyle}>{NotificationInfo.FirstName}</Text>
                         </View>
                     }
                     slidingPanelLayout={() =>
                         <View style={styles.slidingPanelLayoutStyle}>
-                            <Text>Hmm</Text>
+                            {this.renderElement()}
                             <Text>Hmm</Text>
                             <Button
                                 buttonStyle={{ marginTop: 20 }}
@@ -302,6 +385,9 @@ export default class Home extends Component {
 
         </Container>
       )
+      
+
+      
     }
 
     else {
@@ -385,6 +471,12 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         marginTop: 30,
+    },
+
+    distanceTextStyle: {
+      color: 'white',
+      fontSize: 10,
+      marginTop: 25,
     },
     slidingPanelLayoutStyle: {
         width,

@@ -87,14 +87,7 @@ export default class Enroute extends Component {
         console.log(this.state.PassengerOrigin)
 
         // get the Phone Number of the Passenger
-        dataBase = firebase.firestore()
-        let key = this.state.NotificationData.ID
-        PassengerRef = dataBase.collection('users').doc(key)
-
-        PassengerRef.get()
-        .then((doc) => {
-            this.setState({PhoneNumber: doc.data().PhoneNumber})
-        })
+        
 
     }
 
@@ -141,10 +134,10 @@ export default class Enroute extends Component {
                                 buttonStyle={{ marginTop: 20 }}
                                 backgroundColor="#03A9F4"
                                 title="Call"
-                                onPress={() => callNumber(this.state.PhoneNumber)}
+                                onPress={() => callNumber(NotificationInfo.PhoneNumber)}
                             />
                             
-                            <Text style={styles.driverTextStyle}>{NotificationInfo.Name}</Text>
+                            <Text style={styles.driverTextStyle}>{NotificationInfo.FirstName}</Text>
                         </View>
                     }
                     slidingPanelLayout={() =>
