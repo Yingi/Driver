@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Platform, Image, Dimensions, PermissionsAndroid, StyleSheet, TouchableOpacity, ActivityIndicator, AsyncStorage, Alert } from "react-native";
+import { View, Platform, Image, Switch, Dimensions, PermissionsAndroid, StyleSheet, TouchableOpacity, ActivityIndicator, AsyncStorage, Alert } from "react-native";
 import { Card, Button, Text } from "react-native-elements";
 import { onSignOut, USER } from "../auth";
 import { db } from "../../config/MyFirebase";
@@ -13,6 +13,11 @@ import { Container, Icon, Left, Header, Body, Right } from 'native-base';
 import Spinner from 'react-native-spinkit';
 import NavigationService from '../../NavigationService';
 import SlidingPanel from 'react-native-sliding-up-down-panels';
+import { Avatar } from 'react-native-elements';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import SwitchToggle from 'react-native-switch-toggle';
+import { GeoFirestore } from 'geofirestore';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,7 +38,8 @@ export default class Home extends Component {
       NotificationData: this.props.navigation.getParam('data', 'No_data'),
       PassengerAvailable: false,
       PassengerPhotoUrl: null,
-
+      
+      switchOn1: false,
     }
     console.log('fresh')
     
@@ -156,7 +162,7 @@ export default class Home extends Component {
     let RideRef = dataBase.collection('ride-request').doc(key)
     RideRef.collection('RideStatus').doc(key).update({ status: 'accepted' })
 
-    NavigationService.navigate("Enroute", {PassengerLocation: Location, data: this.state.NotificationData})
+    this.props.navigation.replace("Enroute", {PassengerLocation: Location, data: this.state.NotificationData})
 
 
   }
@@ -223,9 +229,9 @@ export default class Home extends Component {
         return (PassengerPhotoUrl)
     }
 
-    callUpon = () => {
-      console.log('Show')
-      this.setState({gab: 'man'})
+    componentWillUnmount() {
+      console.log('First Page has Unmounted')
+      
     }
 
    renderDefaultImage(key) {
@@ -235,8 +241,9 @@ export default class Home extends Component {
 
             console.log('No Driver Photo')
             return (
-                <Image style={styles.PassengerImage}
+              <Image style={styles.PassengerImage}
                     source={require('../images/user.png')} />
+              
             )
         }
 
@@ -244,8 +251,10 @@ export default class Home extends Component {
 
 
             return (
-                <Image style={styles.PassengerImage}
+              <Image style={styles.PassengerImage}
                     source={{ uri: PassengerPhotoUrl }} />
+              
+              
             )
 
         }
@@ -265,6 +274,31 @@ export default class Home extends Component {
           return null;
         }
     }
+
+    onPress1 = () => {
+    dataBase = firebase.firestore()
+    let user = firebase.auth().currentUser;
+    let DriverRef = dataBase.collection('DriversAvailable').doc(user.uid)
+
+    this.setState({ switchOn1: !this.state.switchOn1 });
+
+    if (!this.state.switchOn1) {
+      //Remember instead of Update, You are setting DriversAvailable with Location
+      const geoFirestore = new GeoFirestore(dataBase);
+      const GeoRef = geoFirestore.collection('DriversAvailable');
+      const DocumentData = { 
+              Name: 'Ebiowei Seikegba M',
+              coordinates: new firebase.firestore.GeoPoint(this.state.MyLocationLat, 
+                                                this.state.MyLocationLong)};
+      GeoRef.doc(user.uid).set(DocumentData);
+      
+    }
+
+    else {
+      // Here u are taking away Driver From DriversAvailable
+      DriverRef.delete()
+    }
+  }
 
 
   
@@ -311,6 +345,8 @@ export default class Home extends Component {
       
       return (
         <Container>
+        
+        <View style={{ height: hp('70%') }}>
           <MapView
             provider={PROVIDER_GOOGLE}
             style={styles.map}
@@ -339,38 +375,24 @@ export default class Home extends Component {
             
 
           </MapView>
-          <SlidingPanel
-                    headerLayoutHeight={100}
-                    headerLayout={() =>
-                        <View style={styles.headerLayoutStyle}>
-                            {this.renderElement()}
-                            {this.renderDefaultImage(NotificationInfo.ID)}
-                            <Text style={styles.driverTextStyle}>{NotificationInfo.FirstName}</Text>
-                        </View>
-                    }
-                    slidingPanelLayout={() =>
-                        <View style={styles.slidingPanelLayoutStyle}>
-                            {this.renderElement()}
-                            <Text>Hmm</Text>
-                            <Button
-                                buttonStyle={{ marginTop: 20 }}
-                                backgroundColor="#03A9F4"
-                                title="Cancel Ride"
-                                onPress={() => this.onCancel(NotificationInfo.ID)}
-                            />
-                            <Button
-                                buttonStyle={{ marginTop: 20 }}
-                                backgroundColor="#03A9F4"
-                                title="Accept Ride"
-                                onPress={() => this.onAccept(NotificationInfo.ID, PassengerLocation)}
-                            />
-                        </View>
-                    }
-                />
+          </View>
+          <View style={{ height: hp('30%') }}>
+          <TouchableOpacity onPress={() => this.onAccept(NotificationInfo.ID, PassengerLocation)}>
+            <View style={styles.headerLayoutStyle}>
+            
+                {this.renderElement()}
+                {this.renderDefaultImage(NotificationInfo.ID)}
+                <Text style={styles.driverTextStyle}>{NotificationInfo.FirstName}</Text>
+            
+            </View>
+          </TouchableOpacity>
+            
+          </View>
+          
           <Header transparent>
             <Left>
 
-              <Icon name="ios-menu" onPress={() =>this.props.navigation.openDrawer()
+              <Icon name="ios-menu" onPress={() =>this.props.navigation.toggleDrawer()
                 } />
 
             </Left>
@@ -421,13 +443,47 @@ export default class Home extends Component {
           </MapView>
           <Header transparent>
             <Left>
-
-              <Icon name="ios-menu" onPress={() =>this.props.navigation.openDrawer()
+            
+              <Icon name="ios-menu" onPress={() =>this.props.navigation.toggleDrawer()
                 } />
 
             </Left>
-            <Body />
-            <Right />
+        
+            
+            <Right>
+            
+
+                
+					<SwitchToggle
+          containerStyle={{
+            marginTop: 16,
+            width: 70,
+            height: 35,
+            borderRadius: 25,
+            backgroundColor: '#ccc',
+            padding: 5
+            
+          }}
+          circleStyle={{
+            width: 30,
+            height: 30,
+            borderRadius: 19,
+            backgroundColor: 'white', // rgb(102,134,205)
+          }}
+          switchOn={this.state.switchOn1}
+          onPress={this.onPress1}
+          backgroundColorOn='#a0e1e5'
+          backgroundColorOff='dimgray'
+          circleColorOff='gainsboro'
+          circleColorOn='darkturquoise'
+          duration={500}
+        />
+									
+
+            
+            </Right>
+            
+            
           </Header>
 
           { // Below is what gets data from redux store 
@@ -455,9 +511,10 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   PassengerImage: {
-        width: 95,
-        height: 95,
-        borderRadius: 75
+        width: 70,
+        height: 70,
+        borderRadius: 75,
+        marginTop: 15,
     },
     headerLayoutStyle: {
         width,
@@ -485,5 +542,48 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    component: {
+	    width: '100%',
+	    flexDirection: 'row',
+	    paddingLeft: 7.5,
+	    paddingRight: 7.5,
+	    paddingTop: 7.5,
+	    paddingBottom: 7.5,
+	},
+	
+	layouts: {
+	    flexDirection: 'row',
+	    flexWrap: 'wrap',
+	},
+	
+	layout1: {
+	    width: '100%',
+	    height: 90,
+	},
+	
+	itemcontainer1: {
+	    width: '100%',
+	    height: '100%',
+	    paddingTop: 7.5,
+	    paddingBottom: 7.5,
+	    paddingLeft: 7.5,
+	    paddingRight: 7.5,
+	},
+	
+	itemcontainer1Inner: {
+	    width: '100%',
+	    height: '100%',
+	    position: 'relative',
+	    alignItems: 'center',
+	    justifyContent: 'center',
+	},
+	
+	item1: {
+	    width: '100%',
+	    height: '100%',
+	    alignItems: 'center',
+	    justifyContent: 'center',
+	    overflow: 'hidden',
+	},
 
 })

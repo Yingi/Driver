@@ -48,8 +48,8 @@ export default class Enroute extends Component {
                 new firebase.firestore.GeoPoint(position.coords.latitude, 
                                                 position.coords.longitude)};
 
-        //We have to be sure if we should use set or update
-        GeoRef.doc(user.uid).set(DocumentData);
+        
+        GeoRef.doc(user.uid).update(DocumentData);
         
         this.setState({
           MyLocationLat: position.coords.latitude,
