@@ -1,7 +1,10 @@
+
+    
 import React, { Component } from 'react';
-import { View, Text, Button, Dimensions, Image, StyleSheet } from "react-native";
+import { View, Text, Dimensions, Image, StyleSheet } from "react-native";
+import { Card} from "react-native-elements";
 import MaterialIcons from "react-native-vector-icons";
-import { Container, Icon, Left, Header, Body, Right } from 'native-base';
+import { Container, Icon, Left, Header, Body, Title, Button, Right } from 'native-base';
 import { GeoFirestore } from 'geofirestore';
 import firebase from 'react-native-firebase';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
@@ -10,6 +13,8 @@ import NavigationService from '../../NavigationService';
 import SlidingPanel from 'react-native-sliding-up-down-panels';
 import Geolocation from 'react-native-geolocation-service';
 import { callNumber } from './utils'
+
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,7 +44,13 @@ export default class Enroute extends Component {
 
         
     
-    
+        this.setState({
+          MyLocationLat: position.coords.latitude,
+          MyLocationLong: position.coords.longitude,
+
+
+        });
+
         const geoFirestore = new GeoFirestore(dataBase);
         const GeoRef = geoFirestore.collection('DriversWorking');
 
@@ -51,12 +62,7 @@ export default class Enroute extends Component {
         
         GeoRef.doc(user.uid).update(DocumentData);
         
-        this.setState({
-          MyLocationLat: position.coords.latitude,
-          MyLocationLong: position.coords.longitude,
-
-
-        });
+        
 
       },
       (error) => {
@@ -98,6 +104,20 @@ export default class Enroute extends Component {
 
         return (
         <Container>
+        <Header>
+          <Left>
+            <Button transparent>
+              <Icon name="ios-menu" onPress={() =>this.props.navigation.openDrawer()
+                } />
+            </Button>
+          </Left>
+          <Body>
+            <Title>Header</Title>
+          </Body>
+          <Right />
+        </Header>
+
+        <View style={{ height: hp('70%') }}>
           <MapView
             provider={PROVIDER_GOOGLE}
             style={styles.map}
@@ -126,16 +146,19 @@ export default class Enroute extends Component {
             
 
           </MapView>
+          </View>
+
+          
           <SlidingPanel
                     headerLayoutHeight={100}
                     headerLayout={() =>
                         <View style={styles.headerLayoutStyle}>
-                            <Button
-                                buttonStyle={{ marginTop: 20 }}
-                                backgroundColor="#03A9F4"
-                                title="Call"
-                                onPress={() => callNumber(NotificationInfo.PhoneNumber)}
-                            />
+                        <Button rounded light style={{marginTop: 30}}>
+                            <Icon name="ios-call" onPress={() => callNumber(NotificationInfo.PhoneNumber)}
+                             />
+                            
+                        </Button>
+                            
                             
                             <Text style={styles.driverTextStyle}>{NotificationInfo.FirstName}</Text>
                         </View>
@@ -158,16 +181,8 @@ export default class Enroute extends Component {
                         </View>
                     }
                 />
-          <Header transparent>
-            <Left>
-
-              <Icon name="ios-menu" onPress={() =>this.props.navigation.openDrawer()
-                } />
-
-            </Left>
-            <Body />
-            <Right />
-          </Header>
+            
+          
 
           { // Below is what gets data from redux store 
           }
@@ -221,3 +236,4 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 });
+

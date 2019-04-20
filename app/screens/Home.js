@@ -9,7 +9,7 @@ import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { listenUserName } from "../../config/database";
 import RNGooglePlaces from 'react-native-google-places';
 import MapViewDirections from 'react-native-maps-directions';
-import { Container, Icon, Left, Header, Body, Right } from 'native-base';
+import { Container, Icon, Left, Header, Body, Title, Right } from 'native-base';
 import Spinner from 'react-native-spinkit';
 import NavigationService from '../../NavigationService';
 import SlidingPanel from 'react-native-sliding-up-down-panels';
@@ -17,6 +17,7 @@ import { Avatar } from 'react-native-elements';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import SwitchToggle from 'react-native-switch-toggle';
 import { GeoFirestore } from 'geofirestore';
+import CountdownCircle from 'react-native-countdown-circle'
 
 
 const { width, height } = Dimensions.get('window');
@@ -241,8 +242,11 @@ export default class Home extends Component {
 
             console.log('No Driver Photo')
             return (
+              
+              
               <Image style={styles.PassengerImage}
                     source={require('../images/user.png')} />
+              
               
             )
         }
@@ -251,8 +255,13 @@ export default class Home extends Component {
 
 
             return (
+              
+              
               <Image style={styles.PassengerImage}
                     source={{ uri: PassengerPhotoUrl }} />
+              
+              
+              
               
               
             )
@@ -346,7 +355,8 @@ export default class Home extends Component {
       return (
         <Container>
         
-        <View style={{ height: hp('70%') }}>
+        
+        <View style={{ height: hp('60%') }}>
           <MapView
             provider={PROVIDER_GOOGLE}
             style={styles.map}
@@ -360,8 +370,16 @@ export default class Home extends Component {
             onLayout={this.onMapLayout}
 
           >
+          {
+          this.state.isMapReady &&
           <MapView.Marker coordinate={PresentLocation} />
-          <MapView.Marker coordinate={PassengerLocation} />
+          }
+          <MapView.Marker coordinate={PassengerLocation}>
+          <View style={{backgroundColor: "red", padding: 10}}>
+            <Text>SF</Text>
+          </View>
+          </MapView.Marker>
+          
           <MapViewDirections
               origin={PresentLocation}
               destination={PassengerLocation}
@@ -375,9 +393,33 @@ export default class Home extends Component {
             
 
           </MapView>
+          <CountdownCircle
+            seconds={10}
+            radius={30}
+            borderWidth={8}
+            color="#ff003f"
+            bgColor="#fff"
+            textStyle={{ fontSize: 20 }}
+            onTimeElapsed={() => console.log('Elapsed!')}
+        />
           </View>
-          <View style={{ height: hp('30%') }}>
+
+      <View style={styles.panelContainer}>
+        <View style={{
+                  flex: 1,
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'stretch',
+                  
+            }}>
           <TouchableOpacity onPress={() => this.onAccept(NotificationInfo.ID, PassengerLocation)}>
+            
+            <View style={{height: 1}}>
+            <Text style={{color: 'white',
+                            fontSize: 10,
+                            }}>Tap To Accept</Text>
+            </View>
+
             <View style={styles.headerLayoutStyle}>
             
                 {this.renderElement()}
@@ -385,9 +427,16 @@ export default class Home extends Component {
                 <Text style={styles.driverTextStyle}>{NotificationInfo.FirstName}</Text>
             
             </View>
-          </TouchableOpacity>
+
             
-          </View>
+            
+           
+            
+            
+          </TouchableOpacity>
+        </View>
+        </View>
+      
           
           <Header transparent>
             <Left>
@@ -502,6 +551,8 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   map: { ...StyleSheet.absoluteFillObject },
+
+  
   horizontal: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -516,10 +567,14 @@ const styles = StyleSheet.create({
         borderRadius: 75,
         marginTop: 15,
     },
+    panelContainer: {
+      height: hp('40%'),
+      backgroundColor: 'rgba(0,0,0, 0.9)', 
+      
+    },
     headerLayoutStyle: {
         width,
         height: 100,
-        backgroundColor: 'rgba(0,0,0, 0.9)',
         justifyContent: 'space-evenly',
         //alignItems: 'center',
         flexDirection: 'row',
