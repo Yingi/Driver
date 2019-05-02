@@ -284,6 +284,11 @@ export default class Home extends Component {
         }
     }
 
+    onLoad = () => {
+      console.log("Marker has Load")
+      this.forceUpdate()
+    }
+
     onPress1 = () => {
     dataBase = firebase.firestore()
     let user = firebase.auth().currentUser;
@@ -313,6 +318,7 @@ export default class Home extends Component {
   
 
   render() {
+    console.log("rendering")
     if (this.state.isLoading) {
       return (
         <View
@@ -483,7 +489,17 @@ export default class Home extends Component {
           >
             {
               this.state.isMapReady &&
-              <MapView.Marker coordinate={PresentLocation} />
+              <MapView.Marker
+                coordinate={PresentLocation}
+                anchor={{x: 0.35, y: 0.32}}
+                ref= {marker => {this.marker = marker}}
+                style={{width: 50, height:50}}
+                image={require('../images/car-icon.png')}
+              />
+            
+                
+                
+            
 
             }
 

@@ -12,7 +12,9 @@ import MapViewDirections from 'react-native-maps-directions';
 import NavigationService from '../../NavigationService';
 import SlidingPanel from 'react-native-sliding-up-down-panels';
 import Geolocation from 'react-native-geolocation-service';
-import { callNumber } from './utils'
+import { callNumber } from './utils';
+
+
 
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
@@ -40,13 +42,13 @@ export default class Enroute extends Component {
       (position) => {
 
         // For some reason navigator refused to work on this itel phone
-        console.log('Position Watching')
-
+        
         
     
         this.setState({
           MyLocationLat: position.coords.latitude,
           MyLocationLong: position.coords.longitude,
+          Angle: position.coords.heading
 
 
         });
@@ -72,6 +74,11 @@ export default class Enroute extends Component {
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
     );
 
+    }
+
+    onLoad = () => {
+    console.log('Marker has Loaded')
+    this.forceUpdate()
     }
 
     onCancel = (key) => {
@@ -101,6 +108,7 @@ export default class Enroute extends Component {
         const PresentLocation = { latitude: this.state.MyLocationLat, longitude: this.state.MyLocationLong }
         const GOOGLE_MAPS_APIKEY = 'AIzaSyBIXZvDmynO3bT7i_Yck7knF5wgOVyj5Fk';
         const NotificationInfo = this.state.NotificationData
+        let angle = this.state.Angle || 0
 
         return (
         <Container>
@@ -118,6 +126,8 @@ export default class Enroute extends Component {
         </Header>
 
         <View style={{ height: hp('70%') }}>
+
+            
           <MapView
             provider={PROVIDER_GOOGLE}
             style={styles.map}
@@ -127,12 +137,40 @@ export default class Enroute extends Component {
               latitudeDelta: 0.02,
               longitudeDelta: 0.02,
             }}
-            showsUserLocation={true}
+            
             onLayout={this.onMapLayout}
 
           >
-          <MapView.Marker coordinate={PresentLocation} />
-          <MapView.Marker coordinate={this.state.PassengerOrigin} />
+            
+          
+
+            <MapView.Marker.Animated
+                coordinate={PresentLocation}
+                anchor={{x: 0.35, y: 0.32}}
+                ref= {marker => {this.marker = marker}}
+                style={{
+                    transform: [{
+                            rotate: angle === undefined ? 
+                            '0deg' : `${angle}deg`
+                            }],
+                     width: 50, height:50}}
+                image={require('../images/car-icon.png')}
+            />
+
+
+            <MapView.Marker.Animated
+                coordinate={this.state.PassengerOrigin}
+                anchor={{x: 0.35, y: 0.32}}
+                ref= {marker => {this.marker = marker}}
+                style={{width: 50, height:50}}
+                image={require('../images/PassengerIcon.png')}
+            />
+            
+            
+          
+          
+          
+          
           <MapViewDirections
               origin={PresentLocation}
               destination={this.state.PassengerOrigin}
