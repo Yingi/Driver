@@ -5,6 +5,7 @@ import android.app.Application;
 import com.agontuk.RNFusedLocation.RNFusedLocationPackage;
 
 import com.facebook.react.ReactApplication;
+import uk.co.workingedge.RNLaunchNavigator.RNLaunchNavigatorPackage;
 import com.swmansion.gesturehandler.react.RNGestureHandlerPackage;
 import com.oblador.vectoricons.VectorIconsPackage;
 import io.invertase.firebase.RNFirebasePackage;
@@ -38,6 +39,7 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new RNLaunchNavigatorPackage(),
             new RNGestureHandlerPackage(),
             new RNFusedLocationPackage(),
             new VectorIconsPackage(),

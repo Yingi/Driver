@@ -1,5 +1,3 @@
-
-    
 import React, { Component } from 'react';
 import { View, Text, Dimensions, Image, StyleSheet } from "react-native";
 import { Card} from "react-native-elements";
@@ -12,7 +10,8 @@ import MapViewDirections from 'react-native-maps-directions';
 import NavigationService from '../../NavigationService';
 import SlidingPanel from 'react-native-sliding-up-down-panels';
 import Geolocation from 'react-native-geolocation-service';
-import { callNumber } from './utils';
+import { callNumber, NavigateNow } from './utils';
+
 
 
 
@@ -193,6 +192,12 @@ export default class Enroute extends Component {
                         <View style={styles.headerLayoutStyle}>
                         <Button rounded light style={{marginTop: 30}}>
                             <Icon name="ios-call" onPress={() => callNumber(NotificationInfo.PhoneNumber)}
+                             />
+                            
+                        </Button>
+
+                        <Button rounded light style={{marginTop: 30}}>
+                            <Icon name="md-navigate" onPress={() => NavigateNow(PresentLocation, this.state.PassengerOrigin)}
                              />
                             
                         </Button>

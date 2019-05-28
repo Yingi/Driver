@@ -123,7 +123,7 @@ export default class Home extends Component {
 
         Alert.alert(error.message)
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
 
 
