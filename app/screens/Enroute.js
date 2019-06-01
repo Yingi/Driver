@@ -11,6 +11,7 @@ import NavigationService from '../../NavigationService';
 import SlidingPanel from 'react-native-sliding-up-down-panels';
 import Geolocation from 'react-native-geolocation-service';
 import { callNumber, NavigateNow } from './utils';
+import BottomDrawer from 'rn-bottom-drawer';
 
 
 
@@ -18,6 +19,8 @@ import { callNumber, NavigateNow } from './utils';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const { width, height } = Dimensions.get('window');
+
+const TAB_BAR_HEIGHT = 49;
 
 
 export default class Enroute extends Component {
@@ -93,6 +96,32 @@ export default class Enroute extends Component {
 
         NavigationService.navigate("Main")
     }
+
+    renderBottomDrawer = () => {
+    return (
+    
+    <View style={styles.bottomDrawer}>
+        <Text style={{paddingHorizontal: 5, color: 'white'}}>Get directions to your location</Text>
+      
+      <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly'}}>
+                        <Button rounded light style={{marginTop: 30}}>
+                            <Icon name="ios-call" onPress={() => callNumber(NotificationInfo.PhoneNumber)}
+                             />
+                            
+                        </Button>
+
+                        <Button rounded light style={{marginTop: 30}}>
+                            <Icon name="md-navigate" onPress={() => NavigateNow(PresentLocation, this.state.PassengerOrigin)}
+                             />
+                            
+                        </Button>
+                            
+                            
+                            
+        </View>
+    </View>
+    )
+  }
 
     componentDidMount() {
         console.log(this.state.NotificationData)
@@ -185,7 +214,7 @@ export default class Enroute extends Component {
           </MapView>
           </View>
 
-          
+          {/*
           <SlidingPanel
                     headerLayoutHeight={100}
                     headerLayout={() =>
@@ -224,9 +253,20 @@ export default class Enroute extends Component {
                         </View>
                     }
                 />
-            
+            */}
+
+            <BottomDrawer
+                containerHeight={100}
+                offset={109}
+                roundedEdges={true}
+                backgroundColor={'#000000'}
+                >
+                {this.renderBottomDrawer()}
+            </BottomDrawer>
           
 
+          
+          
           { // Below is what gets data from redux store 
           }
 
@@ -265,6 +305,11 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly',
         //alignItems: 'center',
         flexDirection: 'row',
+    },
+    bottomDrawer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'space-around'
     },
     driverTextStyle: {
         color: 'white',

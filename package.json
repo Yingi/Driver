@@ -38,6 +38,7 @@
     "react-native-switch-toggle": "^1.0.8",
     "react-native-vector-icons": "^4.6.0",
     "react-navigation": "^3.0.0",
+    "rn-bottom-drawer": "^1.4.3",
     "rn-fetch-blob": "^0.10.12"
   },
   "devDependencies": {
