@@ -117,6 +117,8 @@ PODS:
     - React/RCTBlob
   - rn-fetch-blob (0.10.6):
     - React/Core
+  - RNGestureHandler (1.2.1):
+    - React
   - RNImageCropPicker (0.20.3):
     - QBImagePickerController
     - React/Core
@@ -150,6 +152,7 @@ DEPENDENCIES:
   - React/RCTVibration (from `../node_modules/react-native`)
   - React/RCTWebSocket (from `../node_modules/react-native`)
   - rn-fetch-blob (from `../node_modules/rn-fetch-blob`)
+  - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNImageCropPicker (from `../node_modules/react-native-image-crop-picker`)
   - yoga (from `../node_modules/react-native/ReactCommon/yoga/yoga.podspec`)
 
@@ -186,6 +189,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-maps"
   rn-fetch-blob:
     :path: "../node_modules/rn-fetch-blob"
+  RNGestureHandler:
+    :path: "../node_modules/react-native-gesture-handler"
   RNImageCropPicker:
     :path: "../node_modules/react-native-image-crop-picker"
   yoga:
@@ -209,14 +214,15 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: 32aeca0aa144acea523e1c8e053089dec2cb98ca
   nanopb: 2901f78ea1b7b4015c860c2fdd1ea2fee1a18d48
   QBImagePickerController: d54cf93db6decf26baf6ed3472f336ef35cae022
-  React: 1fe0eb13d90b625d94c3b117c274dcfd2e760e11
-  react-native-google-maps: 2cfe3b01f8422c7dae51d8764139fd70f888cfce
-  react-native-maps: 066c2afcc89e18726377bcc685315f989ca22449
-  rn-fetch-blob: 76a8f798dae965bbcd146a2438f2e1d381c91ae3
-  RNImageCropPicker: 32ca4b9fef4e1b7b85ba69494242122948117e06
+  React: adbac0757ce35e92fbd447ab98c810209d27d9b0
+  react-native-google-maps: 68a831730110823d3dadfea0e133f0f4426cd213
+  react-native-maps: fb06a43ce6884256097eec1dd69d23957b71df88
+  rn-fetch-blob: 766f85cabd2992300dfa1be2bc9e4e258abc6f04
+  RNGestureHandler: aea90f0ad8e35fec23438db6fc3ad79be58bb734
+  RNImageCropPicker: 043273b7368fdfb61cc458f359242f0fb75139be
   RSKImageCropper: 98296ad26b41753f796b6898d015509598f13d97
-  yoga: b1ce48b6cf950b98deae82838f5173ea7cf89e85
+  yoga: 74cdf036c30820443b25ade59916236b1e95ee93
 
-PODFILE CHECKSUM: 01e116f12875b7a834f4c4257ec5efef28f3bf89
+PODFILE CHECKSUM: 7211bf4bac9d4ba567c0fcfd419643a076b092f6
 
-COCOAPODS: 1.5.3
+COCOAPODS: 1.6.2
