@@ -5,8 +5,6 @@ import SignIn from "../app/screens/SignIn";
 import SignUp from "../app/screens/SignUp";
 import Home from "../app/screens/Home";
 import Enroute from "../app/screens/Enroute";
-import Mock from "../app/screens/Mock";
-
 import MyProfile from "../app/screens/MyProfile";
 import MyNotificationsScreen from "../app/screens/MyNotificationsScreen";
 import ForgotPassword from "../app/screens/ForgotPassword";
@@ -18,9 +16,6 @@ import DrawerComponent from './DrawerContent'
 export const MyApp = createStackNavigator({
     Main: {
         screen: Home
-    },
-    Mock: {
-        screen: Mock
     },
     Enroute: {
         screen: Enroute

@@ -1,32 +1,41 @@
 import React, { Component } from 'react';
-import { View, Text, Dimensions } from 'react-native';
-import {Header} from 'react-native-elements'
-import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import FlipComponent from 'react-native-flip-component';
+import { View, Button, Text } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
 export default class Mock extends Component {
-  render() {
-    return (
-      <View>
-      <Text></Text>
-      </View>
-    );
+  constructor(props) {
+    super(props);
+    this.state = {
+      isFlipped: false,
+    };
   }
-}
-
-const styles = {
-  container: {
-    
-    flex: 1
-  },
-  headerStyle: {
-    fontSize: 36,
-    textAlign: 'center',
-    fontWeight: '100',
-    marginBottom: 24
-  },
-  elementsContainer: {
-    backgroundColor: '#ecf5fd',
-    
+  render() {
+    return(
+    <View>
+      <FlipComponent
+        isFlipped={this.state.isFlipped}
+        frontView={
+          <View>
+            <Text style={{ textAlign: 'center' }}>
+              Front Side
+            </Text>
+          </View>
+        }
+        backView={
+          <View>
+            <Text style={{ textAlign: 'center' }}>
+              Back Side
+            </Text>
+          </View>
+        }
+      />
+      <Button
+        onPress={() => {
+          this.setState({ isFlipped: !this.state.isFlipped })
+        }}
+        title="Flip"
+      />
+    </View>
+    )
   }
 }

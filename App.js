@@ -114,6 +114,7 @@ async componentDidMount() {
 async checkPermission() {
   const enabled = await firebase.messaging().hasPermission();
   if (enabled) {
+      console.log("Yes Has Permission")
       this.getToken();
   } else {
       this.requestPermission();
@@ -132,12 +133,15 @@ async requestPermission() {
 }
 
 async getToken() {
+  console.log('getting Token')
   let fcmToken = await AsyncStorage.getItem('fcmToken', value);
+  
   if (!fcmToken) {
       fcmToken = await firebase.messaging().getToken();
       if (fcmToken) {
           // user has a device token
           console.log('Has Device Token')
+          console.log(fcmToken)
           await AsyncStorage.setItem('fcmToken', fcmToken);
       }
   }
