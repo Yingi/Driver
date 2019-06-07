@@ -131,6 +131,7 @@ export default class Home extends Component {
 
   componentWillUnmount() {
     this.isUnmounted = true;
+    console.log('First Page has Unmounted')
   }
 
   
@@ -230,10 +231,7 @@ export default class Home extends Component {
         return (PassengerPhotoUrl)
     }
 
-    componentWillUnmount() {
-      console.log('First Page has Unmounted')
-      
-    }
+    
 
    renderDefaultImage(key) {
         const { PassengerPhotoUrl } = this.state;

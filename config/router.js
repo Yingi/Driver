@@ -5,6 +5,7 @@ import SignIn from "../app/screens/SignIn";
 import SignUp from "../app/screens/SignUp";
 import Home from "../app/screens/Home";
 import Enroute from "../app/screens/Enroute";
+import StartRide from "../app/screens/StartRide";
 import MyProfile from "../app/screens/MyProfile";
 import MyNotificationsScreen from "../app/screens/MyNotificationsScreen";
 import ForgotPassword from "../app/screens/ForgotPassword";
@@ -19,6 +20,9 @@ export const MyApp = createStackNavigator({
     },
     Enroute: {
         screen: Enroute
+    },
+    StartRide: {
+        screen: StartRide
     }
 },
     {

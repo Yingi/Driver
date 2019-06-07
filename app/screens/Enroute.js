@@ -12,7 +12,9 @@ import SlidingPanel from 'react-native-sliding-up-down-panels';
 import Geolocation from 'react-native-geolocation-service';
 import { callNumber, NavigateNow } from './utils';
 import BottomDrawer from 'rn-bottom-drawer';
+import LaunchNavigator from 'react-native-launch-navigator';
 
+import Dialog, { DialogFooter, DialogTitle, DialogButton, DialogContent } from 'react-native-popup-dialog';
 
 
 
@@ -30,6 +32,7 @@ export default class Enroute extends Component {
     super(props);
     this.state = {
       
+      visible: false,
       PassengerOrigin: this.props.navigation.getParam('PassengerLocation', 'No_data'),
       MyLocationLat: 0.02,
       MyLocationLong: 0.02,
@@ -55,6 +58,7 @@ export default class Enroute extends Component {
 
         });
 
+        
         const geoFirestore = new GeoFirestore(dataBase);
         const GeoRef = geoFirestore.collection('DriversWorking');
 
@@ -97,6 +101,16 @@ export default class Enroute extends Component {
         NavigationService.navigate("Main")
     }
 
+    NavigateNow = (origin, destination) => {
+
+      this.setState({visible: true})
+      LaunchNavigator.setGoogleApiKey("AIzaSyBIXZvDmynO3bT7i_Yck7knF5wgOVyj5Fk");
+      LaunchNavigator.navigate([destination.latitude, destination.longitude], {
+      start: `${origin.latitude}, ${origin.longitude}`
+      })
+      .then(() => console.log("Launched navigator"))
+      .catch((err) => console.error("Error launching navigator: "+err));
+  }
     renderBottomDrawer = (PresentLocation) => {
     return (
     
@@ -111,7 +125,7 @@ export default class Enroute extends Component {
                         </Button>
 
                         <Button rounded light style={{marginTop: 30}}>
-                            <Icon name="md-navigate" onPress={() => NavigateNow(PresentLocation, this.state.PassengerOrigin)}
+                            <Icon name="md-navigate" onPress={() => this.NavigateNow(PresentLocation, this.state.PassengerOrigin)}
                              />
                             
                         </Button>
@@ -129,6 +143,12 @@ export default class Enroute extends Component {
 
         // get the Phone Number of the Passenger
         
+
+    }
+
+    Move = () => {
+      const { NotificationData, PassengerOrigin} = this.state
+      this.props.navigation.navigate("StartRide", {PassengerOrigin, NotificationData})
 
     }
 
@@ -212,6 +232,48 @@ export default class Enroute extends Component {
             
 
           </MapView>
+          <Dialog
+            visible={this.state.visible}
+            width={0.9}
+            rounded
+
+            dialogTitle={
+              <DialogTitle
+                title="Arrived at Passengers Location??"
+                style={{
+                  backgroundColor: '#F7F7F8',
+                }}
+                hasTitleBar={false}
+                align="left"
+              />
+            }
+            footer={
+            <DialogFooter>
+              <DialogButton
+              text="CANCEL"
+              bordered
+              onPress={() => {
+                this.setState({ visible: false })
+              }}
+              />
+        <DialogButton
+          text="YES"
+          bordered
+          onPress={() => {
+            const { NotificationData, PassengerOrigin} = this.state
+            this.setState({ visible: false })
+            this.props.navigation.navigate("StartRide", {PassengerOrigin, NotificationData})
+             
+          }}
+        />
+      </DialogFooter>
+    }
+  >
+    <DialogContent>
+    <Text>Default Animation</Text>
+    <Text>No onTouchOutside handler. will not dismiss when touch overlay.</Text>
+    </DialogContent>
+  </Dialog>
           </View>
 
           {/*
