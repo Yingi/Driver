@@ -6,10 +6,11 @@ import Spinner from 'react-native-spinkit';
 import firebase from 'react-native-firebase';
 import { Image, Alert, View, AsyncStorage } from 'react-native';
 
-import type { Notification, NotificationOpen } from 'react-native-firebase';
+import type { Notification, NotificationOpen, RemoteMessage } from 'react-native-firebase';
 import NavigationService from './NavigationService';
-import { createStackNavigator, createAppContainer } from 'react-navigation';
+import { createAppContainer } from 'react-navigation';
 
+console.disableYellowBox = true;
 
 export default class App extends Component {
   constructor(props) {
@@ -20,7 +21,8 @@ export default class App extends Component {
       isLoadingComplete: false,
       isAuthenticationReady: false,
       isAuthenticated: false,
-      isUnmounted: false
+      isUnmounted: false,
+      DriverCustomClaim: false
 
     };
     this.unsubscriber = firebase.auth().onAuthStateChanged(this.onAuthStateChanged)
@@ -29,12 +31,33 @@ export default class App extends Component {
   }
 
   onAuthStateChanged = (user) => {
-    console.log("DriverApp Authenticated Now")
     console.log(user)
-    this.setState({ isAuthenticationReady: true });
-    this.setState({ isAuthenticated: !!user });
+    if (user){
+    user.getIdTokenResult()
+    .then((IdTokenResult) => {
+      if(IdTokenResult.claims.driver){ 
+        console.log("Yess Has Claims")
+        this.setState({ isAuthenticationReady: true, isAuthenticated: !!user, DriverCustomClaim: true });
+        this.unsubscriber();
+      }
+      else {
+        this.setState({ isAuthenticationReady: true, isAuthenticated: !!user})
+        console.log(this.state.isAuthenticated)
+
+        this.unsubscriber();
+      }
+    })
+  }
+  else{
+    console.log(user)
+    console.log("lets see")
+    this.setState({ isAuthenticationReady: true, isAuthenticated: !!user})
+    console.log(this.state.isAuthenticated)
+    console.log('rained')
     this.unsubscriber();
-    console.log('Driver Zaza')
+  }
+    
+    
 
   };
 
@@ -64,6 +87,7 @@ async componentDidMount() {
     firebase.notifications().android.createChannel(channel);
     this.notificationDisplayedListener = firebase.notifications().onNotificationDisplayed((notification: Notification) => {
       // Process your notification as required
+      console.log("Was Notification Displayed")
       // ANDROID: Remote notifications do not contain the channel ID. You will have to specify this manually if you'd like to re-display the notification.
     });
     this.notificationListener = firebase.notifications().onNotification((notification: Notification) => {
@@ -76,6 +100,7 @@ async componentDidMount() {
         .setSound('default')
 
         console.log(notification.data)
+        console.log("Notification Has Just Arrived")
 
         //Dispatch to Screen Where u want the Notification Data Displayed
         NavigationService.navigate("Main", {data: notification.data })
@@ -91,9 +116,11 @@ async componentDidMount() {
       firebase.notifications().onNotificationOpened((notificationOpen: NotificationOpen) => {
         // Get the action triggered by the notification being opened
         const action = notificationOpen.action;
+        
         // Get information about the notification that was opened
         const notification: Notification = notificationOpen.notification;
         var seen = [];
+        {/*
         alert(JSON.stringify(notification.data, function (key, val) {
           if (val != null && typeof val == "object") {
             if (seen.indexOf(val) >= 0) {
@@ -102,10 +129,13 @@ async componentDidMount() {
             seen.push(val);
           }
           return val;
-        }));
+        }));*/}
+        
+        NavigationService.navigate("Main", {data: notification.data })
         firebase.notifications().removeDeliveredNotification(notification.notificationId);
 
       });
+      
 }
 
 
@@ -114,9 +144,12 @@ async componentDidMount() {
 async checkPermission() {
   const enabled = await firebase.messaging().hasPermission();
   if (enabled) {
+      //This works for already installed app
       console.log("Yes Has Permission")
       this.getToken();
   } else {
+      console.log("No Permission granted")
+      
       this.requestPermission();
   }
 }
@@ -124,26 +157,39 @@ async checkPermission() {
 async requestPermission() {
   try {
       await firebase.messaging().requestPermission();
+      // This for first time Phone
       // User has authorised
       this.getToken();
   } catch (error) {
       // User has rejected permissions
       console.log('permission rejected');
+      Alert.alert("You wont be able to get Pickup Notifications")
   }
 }
 
 async getToken() {
   console.log('getting Token')
-  let fcmToken = await AsyncStorage.getItem('fcmToken', value);
+  let fcmToken = await AsyncStorage.getItem('fcmToken');
   
   if (!fcmToken) {
+      // Since this is for New Device or New App install we have to update
+      // firebase token of driver reference
       fcmToken = await firebase.messaging().getToken();
       if (fcmToken) {
-          // user has a device token
-          console.log('Has Device Token')
+          // user Now has a device token
+          
+          // You Have to now store Token On Firebase Now
+          // But you cant store it here. You can store it when user
+          // signs in and when they register
+      
+          console.log(firebase.auth().currentUser)
           console.log(fcmToken)
+          console.log("Do we have current User?? Noo For First Time User" )
           await AsyncStorage.setItem('fcmToken', fcmToken);
       }
+  }
+  else{
+    console.log("Token is in Async")
   }
 }
 
@@ -153,6 +199,7 @@ componentWillUnmount() {
     this.notificationDisplayedListener();
     this.notificationListener();
     this.notificationOpenedListener();
+    this.messageListener();
     console.log('Unmounting')
   }
 
@@ -177,46 +224,26 @@ showAlert(title, body) {
       return (
         <View
           style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0, 0.9)',
-            justifyContent: 'center',
-            alignItems: 'center'
+            flex: 1
           }}
         >
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'rgba(0,0,0, 0.9)'
-            }}
-          >
+          
             <Image
               style={{
                 backgroundColor: '#ccc',
                 flex: 1,
-                resizeMode: 'contain',
+                resizeMode: 'cover',
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
                 justifyContent: 'center',
               }}
-              source={require('./app/images/BertaCabs.jpg')}
+              source={require('./app/images/LoadingPage.jpg')}
             />
-          </View>
-          <Spinner
-            style={{
-              marginBottom: 50
-            }}
-            isVisible={true}
-            size={150}
-            type={'Bounce'}
-            color={'#faebd7'}
-
-          />
+          
+          
         </View>
+
 
       );
       //return null;
@@ -226,7 +253,8 @@ showAlert(title, body) {
 
 
     // Sends signedIn state as parameter to Navigator in router.js file
-    const Layout = RootNavigator(this.state.isAuthenticated);
+    const claim = this.state.DriverCustomClaim
+    const Layout = RootNavigator(this.state.isAuthenticated, claim);
     const AppContainer = createAppContainer(Layout);
 
 

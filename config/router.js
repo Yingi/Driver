@@ -6,11 +6,13 @@ import SignUp from "../app/screens/SignUp";
 import Home from "../app/screens/Home";
 import Enroute from "../app/screens/Enroute";
 import StartRide from "../app/screens/StartRide";
-import MyProfile from "../app/screens/MyProfile";
+import RideHistory from "../app/screens/RideHistory";
+import UnVerifiedDriver from "../app/screens/UnVerifiedDriver";
 import MyNotificationsScreen from "../app/screens/MyNotificationsScreen";
 import ForgotPassword from "../app/screens/ForgotPassword";
 import { USER } from "../app/auth";
-import DrawerComponent from './DrawerContent'
+import DrawerComponent from './DrawerContent';
+
 
 
 
@@ -24,13 +26,8 @@ export const MyApp = createStackNavigator({
     StartRide: {
         screen: StartRide
     }
-},
-    {
-        headerMode: 'float',
-        navigationOptions: ({ navigation }) => ({
-            header: null,
-        }),
-    });
+}
+    );
 
 
 export const HomeStack = createDrawerNavigator({
@@ -38,12 +35,9 @@ export const HomeStack = createDrawerNavigator({
         screen: MyApp
     },
 
-    MyProfile: {
-        screen: MyProfile
+    RideHistory: {
+        screen: RideHistory
 
-    },
-    MyNotificationsScreen: {
-        screen: MyNotificationsScreen
     }
 
 },
@@ -55,25 +49,42 @@ export const HomeStack = createDrawerNavigator({
         drawerOpenRoute: 'DrawerOpen',
         drawerCloseRoute: 'DrawerClose',
         drawerToggleRoute: 'DrawerToggle',
-        headerMode: 'float',
-        navigationOptions: ({ navigation }) => ({
-            header: null,
-        }),
+        
 
     });
 
 
-const Route = (val) => {
-    if (val) {
+const Route = (val, claim) => {
+    if (val && claim) {
+        console.log(val)
+        console.log(claim)
+        console.log("Should route now boy")
         return ('Drawer')
     }
-    return ('SignIn')
+    else if(val) {
+        console.log(val)
+        console.log("Why is this showing")
+        console.log(claim)
+        
+        return ('UnVerifiedDriver')
+    }
+    
+    else {
+
+        console.log(claim)
+        console.log('Between')
+        console.log(val)
+        console.log('Going to Sign In')
+        return ('SignIn')
+    }
+    
+    
 
 }
 
 // Below function will route to Drawer if signedIn is true else SignedOut
 // It will also route to NewUser if its a first time user
-export const RootNavigator = (val) => {
+export const RootNavigator = (val, claim) => {
 
     return createStackNavigator(
 
@@ -96,6 +107,10 @@ export const RootNavigator = (val) => {
 
                 }
             },
+            UnVerifiedDriver: {
+                screen: UnVerifiedDriver
+
+            },
             ForgotPassword: {
                 screen: ForgotPassword,
                 navigationOptions: {
@@ -110,11 +125,8 @@ export const RootNavigator = (val) => {
 
         },
         {
-            initialRouteName: Route(val),
-            headerMode: 'float',
-            navigationOptions: ({ navigation }) => ({
-                header: null,
-            }),
+            initialRouteName: Route(val, claim),
+            
         }
 
 

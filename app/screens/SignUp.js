@@ -5,7 +5,6 @@ import { onSignIn, firstUser } from "../auth";
 import { db } from "../../config/MyFirebase";
 import firebase from 'react-native-firebase';
 import Database from "../../config/database";
-import geofire from 'geofire';
 import { StackActions, NavigationActions } from "react-navigation";
 import { TextField } from 'react-native-material-textfield';
 import { RaisedTextButton } from 'react-native-material-buttons';
@@ -57,9 +56,11 @@ export default class SignUp extends Component {
       error: "",
       authenticating: false,
       confirmResult: null,
+      VerificationId: null,
       codeInput: '',
       message: '',
-      signUpScreen: true
+      signUpScreen: true,
+      ConfirmingCode: false
 
     }
   }
@@ -178,52 +179,88 @@ export default class SignUp extends Component {
     );
   }
 
+  
+
   // This function from our auth.js uses AsyncStorage to store FirstTime User
   VerifyPhoneNumber = () => {
     console.log(this.state.phoneNumber)
-
-    firebase.auth().signInWithPhoneNumber(this.state.phoneNumber)
-      .then((confirmResult) => {
-        console.log(confirmResult);
-        this.setState({ confirmResult: confirmResult, authenticating: false })
-
-      })
-      .catch((error) => {
-        console.log(error)
-        console.log(error.message)
-        Alert.alert(error.message)
-      });
+        
+        firebase
+          .auth()
+          .verifyPhoneNumber(this.state.phoneNumber)
+          .on(
+            'state_changed',
+            phoneAuthSnapshot => {
+              switch (phoneAuthSnapshot.state) {
+                case firebase.auth.PhoneAuthState.AUTO_VERIFIED:
+                    console.log(phoneAuthSnapshot)
+                    
+                    let verificationId = phoneAuthSnapshot.verificationId
+                    let code = phoneAuthSnapshot.code
+                    let user = firebase.auth().currentUser
+                    credential = firebase.auth.PhoneAuthProvider.credential(verificationId, code)
+                    user.linkWithCredential(credential)
+                    
+                    console.log('code auto_verified')
+    
+                    user.updateProfile({
+                      phoneNumber: this.state.phoneNumber
+                    }).then(function() {
+                      console.log('Update Successful')
+                    }).catch(function(error) {
+                      console.log('Error')
+                    });
+          
+                    dataBase = firebase.firestore()
+                    let userRef = dataBase.collection('users')
+                    userRef.doc(user.uid).update({PhoneNumber: this.state.phoneNumber})
+                    this.props.navigation.navigate("UnverifiedDriver")
+                    break
+    
+                case firebase.auth.PhoneAuthState.CODE_SENT:
+                    console.log(phoneAuthSnapshot)
+                    console.log('code sent')
+                    this.setState({ VerificationId: phoneAuthSnapshot.verificationId, authenticating: false })
+                    
+                    break
+    
+                case firebase.auth.PhoneAuthState.AUTO_VERIFY_TIMEOUT:
+                  console.log(phoneAuthSnapshot)
+                  console.log('auto verify on android timed out');
+                  break
+    
+    
+                case firebase.auth.PhoneAuthState.ERROR:
+                  console.log('verification error');
+                    break
+    
+            }
+            }
+          )
+        
 
   }
 
   SaveDbDetails = () => {
     let user = firebase.auth().currentUser;
-    //let DriverId = '-LOgt93XjWGZx15IxJJA'
-
-    dataBase = firebase.firestore()
-    dataBase.collection('drivers').doc(user.uid).set({
-      FirstName: this.state.firstname,
-      LastName: this.state.lastname,
-      PhoneNumber: this.state.phoneNumber,
-      Email: this.state.email
-
-    })
-    AsyncStorage.multiSet([['Name', this.state.firstname], ['PhoneNumber', this.state.phoneNumber]])
-    /*db.database.ref('user')
-      .child(user.uid)
-      .set({ Name: this.state.Name })*/
     
-    //let Driver = db.database().ref("/DriversAvaliable")
-    //const geofireRef = new geofire(Driver)
-    //geofireRef.set(DriverId, [9.062032349610963, 7.391128392096082])
+    this.setState({VerificationId: true, authenticating: false})
+    user.updateProfile({
+      displayName: `${this.state.firstname} ${this.state.surname}`,
+      
+    })
+    //We dont need to save Driver Details to database, since we are
+    // going to do it via admin
+    
+    AsyncStorage.multiSet([['Name', this.state.firstname], ['PhoneNumber', this.state.phoneNumber]])
+    
 
     return (user.uid)
 
   }
 
   // This function below uses firebase to create user with email and password
-  // And also it Saves User Info to Database including using AsyncStorage to
-  // to store Name
+  
 
   onSignInPress = () => {
     console.log('Navigate Now')
@@ -241,19 +278,27 @@ export default class SignUp extends Component {
 
 
   confirmCode = () => {
-    const { codeInput, confirmResult } = this.state;
+    this.setState({ConfirmingCode: true})
+    const { codeInput, confirmResult, VerificationId } = this.state;
+    
+        if (VerificationId && codeInput.length) {
+          let user = firebase.auth().currentUser
+          credential = firebase.auth.PhoneAuthProvider.credential(VerificationId, codeInput)
+          user.linkWithCredential(credential).then(() => {
+            user.updateProfile({
+            phoneNumber: this.state.phoneNumber
+            })
+          })
+          
+          dataBase = firebase.firestore()
+          let userRef = dataBase.collection('drivers')
+          userRef.doc(user.uid).update({PhoneNumber: this.state.phoneNumber})
+          //Dont Navigate to Drawer yet unless Custom Claim is checked
+          this.props.navigation.navigate("UnVerifiedDriver")
+    
+        }
+  }
 
-    if (confirmResult && codeInput.length) {
-      confirmResult.confirm(codeInput)
-        .then((user) => {
-          this.setState({ message: 'Code Confirmed!' });
-          console.log(this.state.message)
-          // Display Code is confirmed and set a timeout before navigating to Home
-          this.props.navigation.navigate("Drawer", { phoneNumber: this.state.phoneNumber })
-        })
-        .catch(error => this.setState({ message: `Code Confirm Error: ${error.message}` }));
-    }
-  };
 
   renderVerificationCodeInput() {
     const { codeInput } = this.state;
@@ -289,7 +334,7 @@ export default class SignUp extends Component {
         </View>
       )
     }
-    if (this.state.confirmResult) {
+    if (this.state.VerificationId) {
       const { codeInput } = this.state;
       console.log('U should render Now to Verify Phone Input')
       //this.renderVerificationCodeInput()
@@ -303,6 +348,25 @@ export default class SignUp extends Component {
             placeholder={'Code ... '}
             value={codeInput}
           />
+          {
+            this.state.ConfirmingCode ? (
+              
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  <ActivityIndicator size='large' color="#00ff00" />
+                </View>
+            )
+              : 
+            (
+              null
+            )
+              
+            }
           <Button title="Confirm Code" color="#841584" onPress={this.confirmCode} />
         </View>
       );

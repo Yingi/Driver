@@ -1,4 +1,4 @@
-package com.driver;
+package com.bertadriver;
 
 import com.facebook.react.ReactActivity;
 

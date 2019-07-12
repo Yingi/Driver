@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import { View, Text, Button, StyleSheet, Image } from "react-native";
 import MaterialIcons from "react-native-vector-icons";
 
-export default class MyProfile extends Component {
+export default class RideHistory extends Component {
     static navigationOptions = {
-        drawerLabel: 'Profile',
+        drawerLabel: 'Ride History',
         drawerIcon: ({ tintColor }) => (
             <Image
                 source={require('../images/user.png')}
@@ -16,10 +16,9 @@ export default class MyProfile extends Component {
 
     render() {
         return (
-            <Button
-                onPress={() => this.props.navigation.navigate('MyNotificationsScreen')}
-                title="Go to notifications"
-            />
+            <View>
+                <Text>Ride History Unavailable Now</Text>
+            </View>
         );
     }
 

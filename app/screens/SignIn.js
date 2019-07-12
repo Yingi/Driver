@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity } from "react-native";
+import { View, ActivityIndicator, Text, TouchableOpacity, Alert } from "react-native";
 import { Card, Button, Input } from "react-native-elements";
 import { onSignIn } from "../auth";
 import firebase from 'react-native-firebase';
@@ -100,7 +100,8 @@ export default class SignIn extends Component {
 
         if (!value) {
           errors[name] = 'Should not be empty';
-        } else {
+        } 
+        else {
           if ('password' === name && value.length < 6) {
             errors[name] = 'Too short';
           }
@@ -109,32 +110,60 @@ export default class SignIn extends Component {
 
     this.setState({ errors });
     if (this.isEmptyError(errors)) {
-      console.log('Nothing error')
+      
       this.setState({ authenticating: true });
-      console.log(this.state.email)
-      console.log(this.state.password)
+      
       firebase.auth().signInWithEmailAndPassword(this.state.email, this.state.password)
         .then(() => onSignIn())
         .then(() => {
           let user = firebase.auth().currentUser;
-          console.log(user.uid);
+          user.getIdTokenResult()
+            .then((IdTokenResult) => {
+                console.log(IdTokenResult)
+                if(IdTokenResult.claims.driver){
+                  var navActions = StackActions.reset({
+                    index: 0,
+                    key: null,
+                    actions: [
+                      NavigationActions.navigate({ routeName: "Drawer" })
+                    ]
+                  });
+        
+                  this.props.navigation.dispatch(navActions);
+                  }
+                  else{
+                    var navActions = StackActions.reset({
+                      index: 0,
+                      key: null,
+                      actions: [
+                        NavigationActions.navigate({ routeName: "UnVerifiedDriver" })
+                      ]
+                    });
+          
+                    this.props.navigation.dispatch(navActions);
+                    }
+            })
           //this.props.navigation.navigate("Drawer")
           /*this.props.navigation.navigate("HomeScreen", { idd: user.uid })*/
-          var navActions = StackActions.reset({
-            index: 0,
-            key: null,
-            actions: [
-              NavigationActions.navigate({ routeName: "Drawer" })
-            ]
-          });
-
-          this.props.navigation.dispatch(navActions);
+          
         })
 
-        .catch((error) =>
+        .catch((error) => {
+          
+          this.setState({authenticating: false})
+          Alert.alert(
+            `${error.message}`,
+            'Try Again with Your Coorect Email and Password',
+            [
+              
+              {text: 'OK', onPress: () => null},
+            ],
+            {cancelable: false},
+          );
+        }
           /// We should Provide a way to tell user if this failed to authenticate
           /// instead of constantly loading the activity indicator
-          console.log("No Authentication"))
+        )
     }
     else {
       console.log(errors)
@@ -181,19 +210,7 @@ export default class SignIn extends Component {
   render() {
     let { errors = {}, secureTextEntry, ...data } = this.state;
     const { email, password } = this.state;
-    if (this.state.authenticating) {
-      return (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
-        >
-          <ActivityIndicator size='large' color="#00ff00" />
-        </View>
-      )
-    }
+    
     return (
       <View style={{ paddingVertical: 20, padding: 8 }}>
         <Card title="SIGN IN">
@@ -235,6 +252,27 @@ export default class SignIn extends Component {
             characterRestriction={20}
             renderAccessory={this.renderPasswordAccessory}
           />
+
+          {
+            this.state.authenticating ? (
+              
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  <ActivityIndicator size='large' color="#00ff00" />
+                </View>
+            )
+              : 
+            (
+              null
+            )
+              
+            }
+          
 
 
           <View style={styles.container}>

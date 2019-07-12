@@ -1,17 +1,17 @@
 import React, { Component } from 'react';
-import { View, Text, Dimensions, Image, StyleSheet } from "react-native";
-import { Card} from "react-native-elements";
-import MaterialIcons from "react-native-vector-icons";
-import { Container, Icon, Left, Header, Body, Title, Button, Right } from 'native-base';
+import { View, Text, Dimensions, Image, StyleSheet, Animated, TouchableOpacity } from "react-native";
+
+
+import { Button } from 'native-base';
+import { Icon } from "react-native-elements";
 import { GeoFirestore } from 'geofirestore';
 import firebase from 'react-native-firebase';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import NavigationService from '../../NavigationService';
-import SlidingPanel from 'react-native-sliding-up-down-panels';
+import SlidingUpPanel from 'rn-sliding-up-panel';
 import Geolocation from 'react-native-geolocation-service';
-import { callNumber, NavigateNow } from './utils';
-import BottomDrawer from 'rn-bottom-drawer';
+import { callNumber } from './utils';
 import LaunchNavigator from 'react-native-launch-navigator';
 
 import Dialog, { DialogFooter, DialogTitle, DialogButton, DialogContent } from 'react-native-popup-dialog';
@@ -26,7 +26,18 @@ const TAB_BAR_HEIGHT = 49;
 
 
 export default class Enroute extends Component {
-    
+  static navigationOptions = { 
+    header: null
+      }
+
+  static defaultProps = {
+    draggableRange: {
+      top: height / 1.75,
+      bottom: 120
+    }
+  }
+
+  _draggedValue = new Animated.Value(120)
 
     constructor(props) {
     super(props);
@@ -36,12 +47,17 @@ export default class Enroute extends Component {
       PassengerOrigin: this.props.navigation.getParam('PassengerLocation', 'No_data'),
       MyLocationLat: 0.02,
       MyLocationLong: 0.02,
-      NotificationData: this.props.navigation.getParam('data', 'No_data')
+      NotificationData: this.props.navigation.getParam('data', 'No_data'),
+      PassengerPhotoUrl: this.props.navigation.getParam('PassengerPhototUrl', 'No_data')
 
     }
     
     let user = firebase.auth().currentUser;
+
+    console.log(this.state.NotificationData)
+    console.log(this.state.NotificationData.ID)
     dataBase = firebase.firestore()
+    
 
      Geolocation.watchPosition(
       (position) => {
@@ -63,9 +79,15 @@ export default class Enroute extends Component {
         const GeoRef = geoFirestore.collection('DriversWorking');
 
         console.log('Did it create')
-        const DocumentData = { coordinates: 
+        const DocumentData = {
+           
+          Angle: position.coords.heading,
+          coordinates: 
                 new firebase.firestore.GeoPoint(position.coords.latitude, 
                                                 position.coords.longitude)};
+
+        // Find a way to store heading angle in database.
+        
 
         
         GeoRef.doc(user.uid).update(DocumentData);
@@ -111,31 +133,7 @@ export default class Enroute extends Component {
       .then(() => console.log("Launched navigator"))
       .catch((err) => console.error("Error launching navigator: "+err));
   }
-    renderBottomDrawer = (PresentLocation) => {
-    return (
     
-    <View style={styles.bottomDrawer}>
-        <Text style={{paddingHorizontal: 5, color: 'white'}}>Get directions to your location</Text>
-      
-      <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly'}}>
-                        <Button rounded light style={{marginTop: 30}}>
-                            <Icon name="ios-call" onPress={() => callNumber(NotificationInfo.PhoneNumber)}
-                             />
-                            
-                        </Button>
-
-                        <Button rounded light style={{marginTop: 30}}>
-                            <Icon name="md-navigate" onPress={() => this.NavigateNow(PresentLocation, this.state.PassengerOrigin)}
-                             />
-                            
-                        </Button>
-                            
-                            
-                            
-        </View>
-    </View>
-    )
-  }
 
     componentDidMount() {
         console.log(this.state.NotificationData)
@@ -152,28 +150,63 @@ export default class Enroute extends Component {
 
     }
 
+    onMapLayout = () => {
+      console.log("Yess Map is Visible")
+    }
+
+    renderDefaultImage(key) {
+      const { PassengerPhotoUrl } = this.state;
+
+      if (PassengerPhotoUrl == null) {
+
+          console.log('No Driver Photo')
+          return (
+            
+            
+            <Image style={styles.PassengerImage}
+                  source={require('../images/user.png')} />
+            
+            
+          )
+      }
+
+      else {
+
+
+          return (
+            
+            
+            <Image style={styles.PassengerImage}
+                  source={{ uri: PassengerPhotoUrl }} />
+                   
+          )
+
+      }
+  }
+
     render() {
         const PresentLocation = { latitude: this.state.MyLocationLat, longitude: this.state.MyLocationLong }
         const GOOGLE_MAPS_APIKEY = 'AIzaSyBIXZvDmynO3bT7i_Yck7knF5wgOVyj5Fk';
-        const NotificationInfo = this.state.NotificationData
+
+        const { NotificationData, PassengerOrigin} = this.state
         let angle = this.state.Angle || 0
 
-        return (
-        <Container>
-        <Header>
-          <Left>
-            <Button transparent>
-              <Icon name="ios-menu" onPress={() =>this.props.navigation.openDrawer()
-                } />
-            </Button>
-          </Left>
-          <Body>
-            <Title>Header</Title>
-          </Body>
-          <Right />
-        </Header>
+        const {top, bottom} = this.props.draggableRange
 
-        <View style={{ height: hp('70%') }}>
+    const draggedValue = this._draggedValue.interpolate({
+      inputRange: [bottom, top],
+      outputRange: [0, 1],
+      extrapolate: 'clamp'
+    })
+
+    const transform = [{scale: draggedValue}]
+        
+
+        return (
+        
+        
+
+        <View style={styles.container}>
 
             
           <MapView
@@ -202,7 +235,7 @@ export default class Enroute extends Component {
                             '0deg' : `${angle}deg`
                             }],
                      width: 50, height:50}}
-                image={require('../images/car-icon.png')}
+                image={require('../images/CarMark2.png')}
             />
 
 
@@ -260,9 +293,9 @@ export default class Enroute extends Component {
           text="YES"
           bordered
           onPress={() => {
-            const { NotificationData, PassengerOrigin} = this.state
+            const { NotificationData, PassengerOrigin, PassengerPhotoUrl} = this.state
             this.setState({ visible: false })
-            this.props.navigation.navigate("StartRide", {PassengerOrigin, NotificationData})
+            this.props.navigation.navigate("StartRide", {PassengerOrigin, NotificationData, PassengerPhotoUrl})
              
           }}
         />
@@ -270,61 +303,51 @@ export default class Enroute extends Component {
     }
   >
     <DialogContent>
-    <Text>Default Animation</Text>
-    <Text>No onTouchOutside handler. will not dismiss when touch overlay.</Text>
+    <Text>Arrived</Text>
+    <Text>Click CANCEL To Keep Navigating, Or Click YES To Inform Passenger</Text>
     </DialogContent>
   </Dialog>
+  
+
+          
+
+<SlidingUpPanel
+          showBackdrop={false}
+          ref={c => (this._panel = c)}
+          draggableRange={this.props.draggableRange}
+          animatedValue={this._draggedValue}>
+          <View style={styles.panel}>
+            <Animated.View style={[styles.favoriteIcon, {transform}]}>
+            {this.renderDefaultImage(NotificationData.ID)}
+            </Animated.View>
+            <View style={styles.panelHeader}>
+              <Text style={{color: '#FFF'}}>{NotificationData.Name}</Text>
+            </View>
+
+            <View style={styles.panelContent}>
+            
+
+                <TouchableOpacity style={{marginTop: 30, justifyContent: 'center', alignItems: "center"}} onPress={() => callNumber(NotificationData.PhoneNumber)}>
+                    <Icon name="call" color={'blue'} size={25}/> 
+                    <Text>Call</Text>
+                </TouchableOpacity>
+
+
+                <TouchableOpacity style={{marginTop: 30, justifyContent: 'center', alignItems: "center"}} onPress={() => this.onCancel(NotificationData.ID)}>
+                <Icon name="close" color={'red'} size={25}/>
+                <Text>Cancel</Text>
+                </TouchableOpacity>
+
+                
+                <TouchableOpacity style={{marginTop: 30, justifyContent: 'center', alignItems: "center"}} onPress={() => this.NavigateNow(PresentLocation, this.state.PassengerOrigin)}>
+                <Icon name="directions" color={'red'} size={25}/>
+                <Text>Navigate</Text>
+                </TouchableOpacity>
+
+            </View>
+
           </View>
-
-          {/*
-          <SlidingPanel
-                    headerLayoutHeight={100}
-                    headerLayout={() =>
-                        <View style={styles.headerLayoutStyle}>
-                        <Button rounded light style={{marginTop: 30}}>
-                            <Icon name="ios-call" onPress={() => callNumber(NotificationInfo.PhoneNumber)}
-                             />
-                            
-                        </Button>
-
-                        <Button rounded light style={{marginTop: 30}}>
-                            <Icon name="md-navigate" onPress={() => NavigateNow(PresentLocation, this.state.PassengerOrigin)}
-                             />
-                            
-                        </Button>
-                            
-                            
-                            <Text style={styles.driverTextStyle}>{NotificationInfo.FirstName}</Text>
-                        </View>
-                    }
-                    slidingPanelLayout={() =>
-                        <View style={styles.slidingPanelLayoutStyle}>
-                            
-                            <Button
-                                buttonStyle={{ marginTop: 20 }}
-                                backgroundColor="#03A9F4"
-                                title="Cancel Ride"
-                                onPress={() => this.onCancel(NotificationInfo.ID)}
-                            />
-                            <Button
-                                buttonStyle={{ marginTop: 20 }}
-                                backgroundColor="#03A9F4"
-                                title="Call"
-                                onPress={() => callNumber(this.state.PhoneNumber)}
-                            />
-                        </View>
-                    }
-                />
-            */}
-
-            <BottomDrawer
-                containerHeight={100}
-                offset={109}
-                roundedEdges={true}
-                backgroundColor={'#000000'}
-                >
-                {this.renderBottomDrawer(PresentLocation)}
-            </BottomDrawer>
+        </SlidingUpPanel>
           
 
           
@@ -334,56 +357,49 @@ export default class Enroute extends Component {
 
         
 
-        </Container>
+        </View>
       )
     }
 }
 const styles = StyleSheet.create({
-    icon: {
-        width: 24,
-        height: 24,
-    },
-     buttonsContainer: {
-    alignItems: 'center'
-  },
   map: { ...StyleSheet.absoluteFillObject },
-  horizontal: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 10
-  },
-  buttonsContainer: {
-    alignItems: 'center'
-  },
-  PassengerImage: {
-        width: 95,
-        height: 95,
-        borderRadius: 75
+  container: {
+      flex: 1,
+      backgroundColor: '#f8f9fa',
+      alignItems: 'center',
+      justifyContent: 'center'
     },
-    headerLayoutStyle: {
-        width,
-        height: 100,
-        backgroundColor: 'rgba(0,0,0, 0.9)',
-        justifyContent: 'space-evenly',
-        //alignItems: 'center',
-        flexDirection: 'row',
+    panel: {
+      flex: 1,
+      backgroundColor: 'white',
+      position: 'relative'
     },
-    bottomDrawer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'space-around'
+    panelContent:{
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'space-evenly'
     },
-    driverTextStyle: {
-        color: 'white',
-        fontSize: 18,
-        marginTop: 30,
+    driverImage: {
+      width: 35, 
+      height: 35,
+      borderRadius: 75
+      },
+    panelHeader: {
+      height: 120,
+      backgroundColor: '#b197fc',
+      alignItems: 'center',
+      justifyContent: 'center'
     },
-    slidingPanelLayoutStyle: {
-        width,
-        height,
-        backgroundColor: '#808080',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    favoriteIcon: {
+      position: 'absolute',
+      top: -24,
+      right: 24,
+      backgroundColor: '#2b8a3e',
+      width: 48,
+      height: 48,
+      padding: 8,
+      borderRadius: 24,
+      zIndex: 1
+    }
+    
 });
-

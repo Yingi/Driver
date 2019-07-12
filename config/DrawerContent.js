@@ -1,14 +1,15 @@
 import React from 'react'
-import { View, Platform, Text, Image, StyleSheet, ScrollView, TouchableOpacity, AsyncStorage } from 'react-native'
-import { DrawerItems, NavigationActions } from 'react-navigation'
+import { Text, Image, StyleSheet, TouchableOpacity, AsyncStorage } from 'react-native'
+import { DrawerItems, StackActions, NavigationActions } from 'react-navigation'
 import { USER } from '../app/auth';
-import { Container, Icon, Left, Content, Header, Body, Right } from 'native-base';
-import { db } from "./MyFirebase";
-import { Button } from "react-native-elements";
+import { Container, Content, Header, Body } from 'native-base';
+
+import { Button, Icon } from "react-native-elements";
 import ImagePicker from 'react-native-image-crop-picker';
 import { saveImage } from "./database";
 import { onSignOut } from "../app/auth";
-import NavigationService from '../NavigationService';
+
+import firebase from 'react-native-firebase';
 
 export default class DrawerComponent extends React.PureComponent {
     constructor(props) {
@@ -16,7 +17,8 @@ export default class DrawerComponent extends React.PureComponent {
         this.state = {
             user: null,
             avatarPic: null,
-            image: null
+            image: null,
+            url: null
         }
     }
 
@@ -24,8 +26,32 @@ export default class DrawerComponent extends React.PureComponent {
         this.fetchData()
     }
 
+    galleryPick() {
+        let user = firebase.auth().currentUser;
+        console.log("Open Camera")
+        ImagePicker.openPicker({
+            width: 300,
+            height: 400,
+            cropping: true
+          })
+          .then(image => {
+            saveImage(user.uid, image.path)
+            this.setState({
+                image: {
+                    uri: image.path,
+                    width: image.width,
+                    height: image.height,
+                    mime: image.mime,
+                    size: image.size
+                }
+            });
+
+          })
+          .catch(e => console.log(e));
+    }
+
     pickCamera() {
-        let user = db.auth().currentUser;
+        let user = firebase.auth().currentUser;
         ImagePicker.openCamera({
             cropping: true,
             width: 500,
@@ -61,9 +87,19 @@ export default class DrawerComponent extends React.PureComponent {
     }
 
     SignOut = () => {
-        db.auth().signOut()
+        firebase.auth().signOut()
             .then(() => onSignOut())
-            .then(() => this.props.navigation.navigate("SignedOut"))
+            .then(() => {
+                var navActions = StackActions.reset({
+                    index: 0,
+                    key: null,
+                    actions: [
+                        NavigationActions.navigate({ routeName: "SignIn" })
+                    ]
+                });
+
+                this.props.navigation.dispatch(navActions);
+            })
     }
 
    
@@ -91,11 +127,16 @@ export default class DrawerComponent extends React.PureComponent {
                     <Body>
                         {this.state.image ? this.renderImage(this.state.image) : this.renderDefaultImage()}
 
-                        <Text>{user}</Text>
+                        <TouchableOpacity onPress={this.galleryPick.bind(this)}>
+                        <Text>Open Gallery</Text>
+                        </TouchableOpacity>
 
                         <TouchableOpacity onPress={this.pickCamera.bind(this)}>
-                            <Text>Take a Picture</Text>
+                            <Icon name="camera" color="#000000" size={25} style={{alignSelf: 'center', left: 40}}/>
                         </TouchableOpacity>
+                        
+
+                        
 
 
                     </Body>
@@ -120,28 +161,7 @@ export default class DrawerComponent extends React.PureComponent {
             </Container>
         )
 
-        /*return (
-            <ScrollView contentContainerStyle={{ flex: 1 }}>
-                <View style={{ width: '100%', height: '30%', backgroundColor: 'white' }}>
-                    <Image
-                        style={{ width: 50, height: 50 }}
-                        source={{ uri: this.state.avatarPic }}
-                    />
-
-                    <TouchableOpacity
-                        onPress={() => {
-                            this.props.properties.navigation.navigate('UserInfo')
-                        }}
-                        style={{ marginTop: 10 }}>
-                        <Text>{user.name ? user.name : 'New User'}</Text>
-                    </TouchableOpacity>
-
-                </View>
-
-                <DrawerItems {...this.props.properties} />
-
-            </ScrollView>
-        )*/
+        
     }
 }
 

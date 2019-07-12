@@ -27,8 +27,8 @@ export const saveImage = (key, uri) => {
     let uploadBlob = null
 
 
-    var firebaseStorageRef = dbStorage.ref(key);
-    const imageRef = firebaseStorageRef.child("ProfilePic");
+    var firebaseStorageRef = dbStorage.ref('Drivers');
+    const imageRef = firebaseStorageRef.child(key).child("ProfilePic");
     let mime = 'image/jpg'
 
     fs.readFile(image, 'base64')

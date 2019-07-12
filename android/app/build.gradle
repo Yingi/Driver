@@ -86,7 +86,7 @@ apply from: "../../node_modules/react-native/react.gradle"
  * Upload all the APKs to the Play Store and people will download
  * the correct one based on the CPU architecture of their device.
  */
-def enableSeparateBuildPerCPUArchitecture = false
+def enableSeparateBuildPerCPUArchitecture = true
 
 /**
  * Run Proguard to shrink the Java bytecode in release builds.
@@ -98,21 +98,30 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
-        applicationId "com.driver"
+        applicationId "com.bertadriver"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode 2
         versionName "1.0"
         multiDexEnabled true
-        ndk {
-            abiFilters "armeabi-v7a", "x86"
+        
+    }
+    signingConfigs {
+        release {
+            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+                storeFile file(MYAPP_UPLOAD_STORE_FILE)
+                storePassword MYAPP_UPLOAD_STORE_PASSWORD
+                keyAlias MYAPP_UPLOAD_KEY_ALIAS
+                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            }
         }
     }
+
     splits {
         abi {
             reset()
             enable enableSeparateBuildPerCPUArchitecture
-            universalApk false  // If true, also generate a universal APK
+            universalApk true  // If true, also generate a universal APK
             include "armeabi-v7a", "x86"
         }
     }
@@ -120,6 +129,7 @@ android {
         release {
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            signingConfig signingConfigs.release
         }
     }
     // applicationVariants are e.g. debug, release
@@ -145,11 +155,11 @@ dependencies {
     implementation(project(':react-native-firebase')) {
         transitive = false
     }
-    implementation "com.google.firebase:firebase-auth:16.0.1"
+    implementation "com.google.firebase:firebase-auth:17.0.0"
     implementation "com.google.firebase:firebase-database:16.0.1"
-    implementation "com.google.firebase:firebase-core:16.0.1"
-    implementation "com.google.firebase:firebase-messaging:17.1.0"
-    implementation "com.google.firebase:firebase-firestore:17.0.2"
+    implementation "com.google.firebase:firebase-core:16.0.9"
+    implementation "com.google.firebase:firebase-messaging:18.0.0"
+    implementation "com.google.firebase:firebase-firestore:19.0.0"
 
     implementation (project(':react-native-google-places'))
     implementation(project(':react-native-google-places')){
@@ -157,10 +167,10 @@ dependencies {
           exclude group: 'com.google.android.gms', module: 'play-services-places'
           exclude group: 'com.google.android.gms', module: 'play-services-location'
       }
-      implementation 'com.google.android.gms:play-services-base:15.0.1'
-      implementation 'com.google.android.gms:play-services-places:15.0.1'
-      implementation 'com.google.android.gms:play-services-location:15.0.1'
-      implementation 'com.google.android.gms:play-services-maps:15.0.1'
+      implementation 'com.google.android.gms:play-services-base:16.1.0'
+      implementation 'com.google.android.gms:play-services-places:16.1.0'
+      implementation 'com.google.android.gms:play-services-location:16.0.0'
+      implementation 'com.google.android.gms:play-services-maps:16.1.0'
       implementation 'com.android.support:multidex:1.0.3'
 
     implementation(project(':react-native-maps')){
@@ -188,3 +198,4 @@ task copyDownloadableDepsToLibs(type: Copy) {
 }
 
 apply plugin: 'com.google.gms.google-services'
+com.google.gms.googleservices.GoogleServicesPlugin.config.disableVersionCheck = true

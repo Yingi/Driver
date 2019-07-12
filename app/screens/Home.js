@@ -1,30 +1,31 @@
 import React, { Component } from 'react';
-import { View, Platform, Image, Switch, Dimensions, PermissionsAndroid, StyleSheet, TouchableOpacity, ActivityIndicator, AsyncStorage, Alert } from "react-native";
-import { Card, Button, Text } from "react-native-elements";
-import { onSignOut, USER } from "../auth";
+import { View, Image, Dimensions, StyleSheet, TouchableOpacity, AsyncStorage, Alert } from "react-native";
+import { Text } from "react-native-elements";
+import { onSignOut } from "../auth";
 import { db } from "../../config/MyFirebase";
 import firebase from 'react-native-firebase';
 import Geolocation from 'react-native-geolocation-service';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
-import { listenUserName } from "../../config/database";
-import RNGooglePlaces from 'react-native-google-places';
+
+
 import MapViewDirections from 'react-native-maps-directions';
 import { Container, Icon, Left, Header, Body, Title, Right } from 'native-base';
 import Spinner from 'react-native-spinkit';
-import NavigationService from '../../NavigationService';
-import SlidingPanel from 'react-native-sliding-up-down-panels';
-import { Avatar } from 'react-native-elements';
+
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import SwitchToggle from 'react-native-switch-toggle';
 import { GeoFirestore } from 'geofirestore';
 import CountdownCircle from 'react-native-countdown-circle'
 
 
+
 const { width, height } = Dimensions.get('window');
 
 
 export default class Home extends Component {
-
+static navigationOptions = { 
+    header: null
+      }
 
   constructor(props) {
     super(props);
@@ -39,12 +40,47 @@ export default class Home extends Component {
       NotificationData: this.props.navigation.getParam('data', 'No_data'),
       PassengerAvailable: false,
       PassengerPhotoUrl: null,
-      
+      concatOrigin: "",
+      concatDest: "",
       switchOn1: false,
     }
     console.log('fresh')
     
 
+  }
+
+  // Asynchronously Store device token in Firebase and Async Storage
+  async storeToken() {
+    
+    let fcmToken = await AsyncStorage.getItem('fcmToken');
+    
+    if (!fcmToken) {
+        fcmToken = await firebase.messaging().getToken();
+        if (fcmToken) {
+            dataBase = firebase.firestore()
+            let user = firebase.auth().currentUser
+            let DriverRef = dataBase.collection('drivers').doc(user.uid)
+            DriverRef.update({ NotificationId: fcmToken })
+            
+            await AsyncStorage.setItem('fcmToken', fcmToken);
+        }
+        else {
+          Alert.alert("You cant recieve Notifications")
+        }
+    }
+    else{
+      console.log(fcmToken)
+      dataBase = firebase.firestore()
+      let user = firebase.auth().currentUser
+      let DriverRef = dataBase.collection('drivers').doc(user.uid)
+      DriverRef.update({ NotificationId: fcmToken })
+      console.log("Token already in Async Go ahead Home")
+    }
+  }
+
+  async Coords(origin, destination) {
+     await this.mergeCoords(origin, destination)
+     this.Distance(origin, destination)
   }
 
   
@@ -63,12 +99,28 @@ export default class Home extends Component {
     const PassengerLocation = {latitude: parseFloat(NotificationInfo.Lat), longitude: parseFloat(NotificationInfo.Long)}
 
       //this.mergeCoords(PresentLocation, PassengerLocation);
+    {/** 
+      let concatOrigin = PresentLocation.latitude + "," + PresentLocation.longitude
+      let concatDest = PassengerLocation.latitude + "," + PassengerLocation.longitude
+      console.log(`Here is the conCat ${concatOrigin}`)
+      this.setState({
+          concatOrigin: concatOrigin,
+          concatDest: concatDest,
+          valerie: 'Heymani',
+          NotificationData: data,
+          PassengerAvailable: true
+          
+      });
+      */}
+
+      
+      this.Coords(PresentLocation, PassengerLocation)
 
     this.setState({NotificationData: data, PassengerAvailable: true})
 
-    this.mergeCoords(PresentLocation, PassengerLocation);
+    //this.mergeCoords(PresentLocation, PassengerLocation);
 
-    this.Distance(PresentLocation, PassengerLocation);
+    
 
   }
   componentDidMount() {
@@ -78,19 +130,14 @@ export default class Home extends Component {
     
     
     let user = firebase.auth().currentUser;
+
+    
     console.log(user.uid)
+    console.log(user)
     console.log(this.state.NotificationData)
 
     // Store your device Token In Firebase
-    firebase.messaging().getToken()
-      .then(fcmToken => {
-            if (fcmToken) {
-                console.log(fcmToken)
-              } 
-            else {
-                console.log('No Token')
-              } 
-          });
+    this.storeToken()
 
     console.log('Is this Navigator working at all')
     // For some reasons, this function finishes before database listener in the constructor
@@ -123,7 +170,7 @@ export default class Home extends Component {
 
         Alert.alert(error.message)
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
     );
 
 
@@ -148,23 +195,45 @@ export default class Home extends Component {
   }
 
   onCancel = (key) => {
+    
+    user = firebase.auth().currentUser
     dataBase = firebase.firestore()
+
+    DriverAvailableRef = dataBase.collection('DriversAvailable').doc(user.uid)
+    DriverAvailableRef.delete()
+
+    
+    
     let RideRef = dataBase.collection('ride-request').doc(key)
     RideRef.collection('RideStatus').doc(key).update({ status: 'cancelled' })
 
+    console.log('Has Updated')
+
+    //You May also want to remove NewRide Reference added to your folder
+    const NotificationInfo = this.state.NotificationData
+    let childRef = dataBase.collection('drivers').doc(user.uid).collection('NewRide').doc(NotificationInfo.ID)
+    childRef.delete()
     // You may want to set NotificationData to its previous state
     this.setState({
       PassengerAvailable: false,
       NotificationData: this.props.navigation.getParam('data', 'No_data')
       })
+    this.props.navigation.navigate('Home')
   }
 
   onAccept = (key, Location) => {
+    user = firebase.auth().currentUser
     dataBase = firebase.firestore()
     let RideRef = dataBase.collection('ride-request').doc(key)
     RideRef.collection('RideStatus').doc(key).update({ status: 'accepted' })
 
-    this.props.navigation.replace("Enroute", {PassengerLocation: Location, data: this.state.NotificationData})
+
+    // I think we have to take away this driver from DriversAvailable Now
+    // Because it doesnt seem to be working in ConnectingDriver.js Passenger Screen
+    DriverAvailableRef = dataBase.collection('DriversAvailable').doc(user.uid)
+    DriverAvailableRef.delete()
+
+    this.props.navigation.replace("Enroute", {PassengerLocation: Location, data: this.state.NotificationData, PassengerPhotoUrl: this.state.PassengerPhotoUrl})
 
 
   }
@@ -173,13 +242,19 @@ export default class Home extends Component {
 
         let concatOrigin = origin.latitude + "," + origin.longitude
         let concatDest = destination.latitude + "," + destination.longitude
+        console.log(`Here is the conCat ${concatOrigin}`)
         this.setState({
             concatOrigin: concatOrigin,
-            concatDest: concatDest
+            concatDest: concatDest,
+            valerie: 'Heymani'
         });
+        console.log(this.state.valerie)
+        
     }
 
   Distance = (origin, destination) => {
+
+    console.log(this.state.concatOrigin)
     
     let API_KEY = 'AIzaSyBIXZvDmynO3bT7i_Yck7knF5wgOVyj5Fk'
     fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${this.state.concatOrigin}&destinations=${this.state.concatDest}&key=${API_KEY}`)
@@ -191,6 +266,7 @@ export default class Home extends Component {
           // car and then set duration and distance too
           console.log('It is search look')
           console.log(responseJson)
+          console.log(responseJson.rows[0].elements[0])
 
 
           // Temporarily set state so map will show because unpaid distance matrix api will give an error
@@ -220,14 +296,15 @@ export default class Home extends Component {
 
         var firebaseStorageRef = dbStorage.ref('Passengers');
 
-        const imageRef = firebaseStorageRef.child(key).child('IMG_0189.JPG');
+        const imageRef = firebaseStorageRef.child(key).child('ProfilePic');
         const imgUrl = imageRef.getDownloadURL()
         imgUrl.then((url) => {
             console.log(url)
             this.setState({ PassengerPhotoUrl: url })
             //this.setState({ error: "Badd" })
 
-        });
+        })
+        .catch(e => console.log(e));
         return (PassengerPhotoUrl)
     }
 
@@ -289,6 +366,7 @@ export default class Home extends Component {
 
     onPress1 = () => {
     dataBase = firebase.firestore()
+    console.log(dataBase)
     let user = firebase.auth().currentUser;
     let DriverRef = dataBase.collection('DriversAvailable').doc(user.uid)
 
@@ -297,12 +375,15 @@ export default class Home extends Component {
     if (!this.state.switchOn1) {
       //Remember instead of Update, You are setting DriversAvailable with Location
       const geoFirestore = new GeoFirestore(dataBase);
+      console.log(geoFirestore)
       const GeoRef = geoFirestore.collection('DriversAvailable');
       const DocumentData = { 
-              Name: 'Ebiowei Seikegba M',
+              Name: user.displayName,
+              
               coordinates: new firebase.firestore.GeoPoint(this.state.MyLocationLat, 
                                                 this.state.MyLocationLong)};
       GeoRef.doc(user.uid).set(DocumentData);
+      
       
     }
 
@@ -376,13 +457,22 @@ export default class Home extends Component {
           >
           {
           this.state.isMapReady &&
-          <MapView.Marker coordinate={PresentLocation} />
+          <MapView.Marker
+                coordinate={PresentLocation}
+                anchor={{x: 0.35, y: 0.32}}
+                ref= {marker => {this.marker = marker}}
+                style={{width: 32, height:32}}
+                image={require('../images/CarMark2.png')}
+              />
           }
-          <MapView.Marker coordinate={PassengerLocation}>
-          <View style={{backgroundColor: "red", padding: 10}}>
-            <Text>SF</Text>
-          </View>
-          </MapView.Marker>
+          <MapView.Marker
+                coordinate={PassengerLocation}
+                anchor={{x: 0.35, y: 0.32}}
+                ref= {marker => {this.marker = marker}}
+                style={{width: 32, height:32}}
+                image={require('../images/PassengerIcon.png')}
+              />
+          
           
           <MapViewDirections
               origin={PresentLocation}
@@ -398,13 +488,13 @@ export default class Home extends Component {
 
           </MapView>
           <CountdownCircle
-            seconds={10}
+            seconds={15}
             radius={30}
             borderWidth={8}
             color="#ff003f"
             bgColor="#fff"
             textStyle={{ fontSize: 20 }}
-            onTimeElapsed={() => console.log('Elapsed!')}
+            onTimeElapsed={() => this.onCancel(NotificationInfo.ID)}
         />
           </View>
 
@@ -428,7 +518,7 @@ export default class Home extends Component {
             
                 {this.renderElement()}
                 {this.renderDefaultImage(NotificationInfo.ID)}
-                <Text style={styles.driverTextStyle}>{NotificationInfo.FirstName}</Text>
+                <Text style={styles.driverTextStyle}>{NotificationInfo.Name}</Text>
             
             </View>
 
@@ -492,7 +582,7 @@ export default class Home extends Component {
                 anchor={{x: 0.35, y: 0.32}}
                 ref= {marker => {this.marker = marker}}
                 style={{width: 50, height:50}}
-                image={require('../images/car-icon.png')}
+                image={require('../images/CarMark2.png')}
               />
             
                 
