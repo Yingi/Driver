@@ -167,7 +167,7 @@ CalculateFare = () => {
         .then(responseJson => {
           console.log(responseJson)
             let dsM = responseJson.rows[0].elements[0].distance.value
-            let CarPricePerMetre = 0.12065637
+            let CarPricePerMetre = 0.15065637
             let CarPrice = Math.round(CarPricePerMetre * dsM)
 
             let BasePrice = 200
@@ -177,7 +177,7 @@ CalculateFare = () => {
             // If its greater than base price, then set carPrice
             // as the car fare Price
             if (CarPrice > BasePrice){
-              let DriverRef = database.collection("drivers").doc(user.uid)
+              let DriverRef = dataBase.collection("drivers").doc(user.uid)
               
               let TripRefKey = dataBase.collection('TripKey').doc(this.state.PassengerDetails.ID)
               //Get Ride Key
@@ -199,7 +199,7 @@ CalculateFare = () => {
               Alert.alert(`Amount For Your Trip is N${CarPrice}`)
             }
             else {
-              let DriverRef = database.collection("drivers").doc(user.uid)
+              let DriverRef = dataBase.collection("drivers").doc(user.uid)
               let TripRefKey = dataBase.collection('TripKey').doc(this.state.PassengerDetails.ID)
               
               //Get Ride Key
@@ -209,15 +209,15 @@ CalculateFare = () => {
                 const RefID = val.get('Key')
                 //Now update Ride
                 let Ride = dataBase.collection('Rides').doc(RefID)
-                Ride.update({Fare: CarPrice, Status: 'Completed'})
+                Ride.update({Fare: BasePrice, Status: 'Completed'})
 
                 //Now Update Driver Ref with Trip
-                DriverRef.collection('Trips').doc(RefID).set({Fare: CarPrice, DropOffAddress: this.state.PassengerDetails.DropOffAddress})
+                DriverRef.collection('Trips').doc(RefID).set({Fare: BasePrice, DropOffAddress: this.state.PassengerDetails.DropOffAddress})
                
                 
               })
-              this.setState({carPrice: CarPrice, CalculatingFare: false })
-              Alert.alert(`Amount For Your Trip is N${CarPrice}`)
+              this.setState({carPrice: BasePrice, CalculatingFare: false })
+              Alert.alert(`Amount For Your Trip is N${BasePrice}`)
             }
         })
 }
@@ -419,7 +419,7 @@ render () {
     }
   >
     <DialogContent>
-    <Text>Arrived and DropOff</Text>
+    <Text>Arrived at DropOff ?</Text>
     <Text>Click CANCEL To Keep Navigating, Or Click YES To Calculate Fare</Text>
     </DialogContent>
   </Dialog>
@@ -450,7 +450,7 @@ render () {
 
 
                 <TouchableOpacity style={{marginTop: 30, justifyContent: 'center', alignItems: "center"}} onPress={() => this.LaunchRoute()}>
-                <Icon name="md-navigate" color={'red'} size={25}/>
+                <Icon name="directions" color={'red'} size={25}/>
                 <Text>Navigate</Text>
                 </TouchableOpacity>
             </View>

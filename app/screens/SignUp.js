@@ -151,7 +151,7 @@ export default class SignUp extends Component {
       this.setState({ authenticating: true, signUpScreen: false })
       firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password)
         .then(() => this.SaveDbDetails())
-        .then((id) => this.VerifyPhoneNumber())
+        //.then((id) => this.VerifyPhoneNumber())
         //.catch((error) => this.setState({ error: "Authentication Failed" }))
         .catch((error) => console.log(error))
     }
@@ -212,9 +212,9 @@ export default class SignUp extends Component {
                     });
           
                     dataBase = firebase.firestore()
-                    let userRef = dataBase.collection('users')
+                    let userRef = dataBase.collection('drivers')
                     userRef.doc(user.uid).update({PhoneNumber: this.state.phoneNumber})
-                    this.props.navigation.navigate("UnverifiedDriver")
+                    this.props.navigation.navigate("UnVerifiedDriver")
                     break
     
                 case firebase.auth.PhoneAuthState.CODE_SENT:
@@ -243,16 +243,22 @@ export default class SignUp extends Component {
 
   SaveDbDetails = () => {
     let user = firebase.auth().currentUser;
+    console.log('User has authenticated')
     
-    this.setState({VerificationId: true, authenticating: false})
+    
     user.updateProfile({
       displayName: `${this.state.firstname} ${this.state.surname}`,
+      phoneNumber: `${this.state.phoneNumber}`
       
+    }).then(() => {
+      
+      
+      this.props.navigation.navigate("UnVerifiedDriver")
     })
     //We dont need to save Driver Details to database, since we are
     // going to do it via admin
     
-    AsyncStorage.multiSet([['Name', this.state.firstname], ['PhoneNumber', this.state.phoneNumber]])
+    
     
 
     return (user.uid)

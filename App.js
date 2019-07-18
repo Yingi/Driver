@@ -199,7 +199,7 @@ componentWillUnmount() {
     this.notificationDisplayedListener();
     this.notificationListener();
     this.notificationOpenedListener();
-    this.messageListener();
+    
     console.log('Unmounting')
   }
 
