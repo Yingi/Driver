@@ -123,9 +123,13 @@ static navigationOptions = {
     
 
   }
+
+  
+
   componentDidMount() {
 
     console.log(this.state.NotificationData)
+    
 
     
     
@@ -221,7 +225,8 @@ static navigationOptions = {
     this.props.navigation.navigate('Home')
   }
 
-  onAccept = (key, Location) => {
+  onAccept = (key, Location, PresentLocation) => {
+    Geolocation.clearWatch(this.watchId)
     user = firebase.auth().currentUser
     dataBase = firebase.firestore()
     let RideRef = dataBase.collection('ride-request').doc(key)
@@ -233,7 +238,7 @@ static navigationOptions = {
     DriverAvailableRef = dataBase.collection('DriversAvailable').doc(user.uid)
     DriverAvailableRef.delete()
 
-    this.props.navigation.replace("Enroute", {PassengerLocation: Location, data: this.state.NotificationData, PassengerPhotoUrl: this.state.PassengerPhotoUrl})
+    this.props.navigation.replace("Enroute", {PassengerLocation: Location, data: this.state.NotificationData, PassengerPhotoUrl: this.state.PassengerPhotoUrl, PresentLocation: PresentLocation})
 
 
   }
@@ -364,6 +369,48 @@ static navigationOptions = {
       this.forceUpdate()
     }
 
+    WatchDriverLocation = () => {
+      
+      let user = firebase.auth().currentUser;
+      dataBase = firebase.firestore()
+      this.watchId = Geolocation.watchPosition(
+      (position) => {
+        console.log("happenin")
+        
+        this.setState({
+          MyLocationLat: position.coords.latitude,
+          MyLocationLong: position.coords.longitude
+        });
+        
+        
+        const geoFirestore = new GeoFirestore(dataBase);
+        const GeoRef = geoFirestore.collection('DriversAvailable');
+
+        
+        const DocumentData = {
+           
+          
+          coordinates: 
+                new firebase.firestore.GeoPoint(position.coords.latitude, 
+                                                position.coords.longitude)};
+
+        // Find a way to store heading angle in database.
+        
+
+        
+        GeoRef.doc(user.uid).update(DocumentData);
+        
+        
+
+      },
+      (error) => {
+
+        console.log(error.message)
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+    );
+
+    }
     onPress1 = () => {
     dataBase = firebase.firestore()
     console.log(dataBase)
@@ -383,12 +430,17 @@ static navigationOptions = {
               coordinates: new firebase.firestore.GeoPoint(this.state.MyLocationLat, 
                                                 this.state.MyLocationLong)};
       GeoRef.doc(user.uid).set(DocumentData);
+      //You can Now WatchDriver Location incase the Driver is Moving
+      this.WatchDriverLocation()
       
       
     }
 
     else {
       // Here u are taking away Driver From DriversAvailable
+      
+      //First we stop watching Position of Driver
+      Geolocation.clearWatch(this.watchId)
       DriverRef.delete()
     }
   }
@@ -506,7 +558,7 @@ static navigationOptions = {
                   alignItems: 'stretch',
                   
             }}>
-          <TouchableOpacity onPress={() => this.onAccept(NotificationInfo.ID, PassengerLocation)}>
+          <TouchableOpacity onPress={() => this.onAccept(NotificationInfo.ID, PassengerLocation, PresentLocation)}>
             
             <View style={{height: 1}}>
             <Text style={{color: 'white',

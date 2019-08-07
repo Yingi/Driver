@@ -44,8 +44,9 @@ export default class Enroute extends Component {
     this.state = {
       
       visible: false,
+      
       PassengerOrigin: this.props.navigation.getParam('PassengerLocation', 'No_data'),
-      MyLocationLat: 0.02,
+      MyLocationLat: 0.2,
       MyLocationLong: 0.02,
       NotificationData: this.props.navigation.getParam('data', 'No_data'),
       PassengerPhotoUrl: this.props.navigation.getParam('PassengerPhototUrl', 'No_data')
@@ -57,15 +58,46 @@ export default class Enroute extends Component {
     console.log(this.state.NotificationData)
     console.log(this.state.NotificationData.ID)
     dataBase = firebase.firestore()
+
+    Geolocation.getCurrentPosition(
+        (position) => {
+  
+          // For some reason navigator refused to work on this itel phone
+          
+          
+          
+          console.log('Geolocation Working Now')
+          this.setState({
+            MyLocationLat: position.coords.latitude,
+            MyLocationLong: position.coords.longitude,
+            Angle: position.coords.heading
+          });
+          
+          
+  
+        },
+        (error) => {
+  
+          Alert.alert(error.message)
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+      );
+
     
 
-     Geolocation.watchPosition(
+     
+
+    }
+
+    watchEnroute() {
+
+      this.watchEnrouteID = Geolocation.watchPosition(
       (position) => {
 
         // For some reason navigator refused to work on this itel phone
         
         
-    
+        console.log("Enrouting Now")
         this.setState({
           MyLocationLat: position.coords.latitude,
           MyLocationLong: position.coords.longitude,
@@ -99,7 +131,7 @@ export default class Enroute extends Component {
 
         Alert.alert(error.message)
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000, distanceFilter:100 },
     );
 
     }
@@ -113,6 +145,15 @@ export default class Enroute extends Component {
         dataBase = firebase.firestore()
         let RideRef = dataBase.collection('ride-request').doc(key)
         RideRef.collection('RideStatus').doc(key).update({ status: 'cancelled' })
+
+        //Remove Child Ref from driver
+        let user = firebase.auth().currentUser;
+        let Ref = dataBase.collection("drivers").doc(user.uid)
+        Ref.collection("NewRide").doc(key).delete()
+
+        //Remove Drivvers Working too
+        let DriverWorkingRef = dataBase.collection("DriversWorking").doc(user.uid)
+        DriverWorkingRef.delete()
 
         // You may want to set NotificationData to its previous state
         this.setState({
@@ -130,7 +171,7 @@ export default class Enroute extends Component {
       LaunchNavigator.navigate([destination.latitude, destination.longitude], {
       start: `${origin.latitude}, ${origin.longitude}`
       })
-      .then(() => console.log("Launched navigator"))
+      .then(() => this.watchEnroute())
       .catch((err) => console.error("Error launching navigator: "+err));
   }
     
@@ -294,7 +335,9 @@ export default class Enroute extends Component {
           bordered
           onPress={() => {
             const { NotificationData, PassengerOrigin, PassengerPhotoUrl} = this.state
+            Geolocation.clearWatch(this.watchEnrouteID)
             this.setState({ visible: false })
+
             this.props.navigation.navigate("StartRide", {PassengerOrigin, NotificationData, PassengerPhotoUrl})
              
           }}

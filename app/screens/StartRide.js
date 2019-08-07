@@ -6,11 +6,13 @@ import { Container, Left, Header, Body, Title, Button, Right } from 'native-base
 import { GeoFirestore } from 'geofirestore';
 import firebase from 'react-native-firebase';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import NavigationService from '../../NavigationService';
 import MapViewDirections from 'react-native-maps-directions';
 import SlidingUpPanel from 'rn-sliding-up-panel';
 import Geolocation from 'react-native-geolocation-service';
 import { callNumber, NavigateNow } from './utils';
 import LaunchNavigator from 'react-native-launch-navigator';
+
 
 import Dialog, { DialogFooter, DialogTitle, DialogButton, DialogContent } from 'react-native-popup-dialog';
 
@@ -59,11 +61,13 @@ export default class StartRide extends Component {
       MyLocationLong: 0.02,
       PassengerDestination: { latitude: 0.02, longitude: 0.02 },
       PassengerDetails: this.props.navigation.state.params.NotificationData,
+      prevLatLng: { latitude: 0.02, longitude: 0.02 },
       concatOrigin: "",
       concatDest: "",
       carPrice: 0.00,
       autoPrice: 0.00,
-      CalculatingFare: false
+      CalculatingFare: false,
+      meter: 0
 
     }
 
@@ -83,6 +87,7 @@ export default class StartRide extends Component {
           console.log('Geolocation Working Now')
           this.setState({
             PassengerDestination: { latitude: position.coords.latitude, longitude: position.coords.longitude },
+            prevLatLng: { latitude: position.coords.latitude, longitude: position.coords.longitude },
             MyLocationLat: position.coords.latitude,
             MyLocationLong: position.coords.longitude,
           });
@@ -97,86 +102,21 @@ export default class StartRide extends Component {
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
       );
 
-      Geolocation.watchPosition(
-        (position) => {
-  
-          // For some reason navigator refused to work on this itel phone
-          
-          
-          
-          console.log('Geolocation Working Now')
-          this.setState({
-            PassengerDestination: { latitude: position.coords.latitude, longitude: position.coords.longitude },
-            MyLocationLat: position.coords.latitude,
-            MyLocationLong: position.coords.longitude,
-          });
-          
-          
-  
-        },
-        (error) => {
-  
-          Alert.alert(error.message)
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
-      );
+      
 }
 
-componentDidMount(){
 
-  // Tell Passenger When You have arrived at their destination
+CalculateFare() {
+  Geolocation.clearWatch(this.watchTrip)
+  
+  dataBase = firebase.firestore()
   let user = firebase.auth().currentUser;
-  
 
-  const geoFirestore = new GeoFirestore(dataBase);
-  const GeoRef = geoFirestore.collection('DriversWorking');
-
-  console.log('Did it create')
-  const DocumentData = {
-  Arrived: 'Yes'
-  } 
-        
-  GeoRef.doc(user.uid).update(DocumentData);
-
-
-}
-
-mergeLocationCoordinates = (origin, destination) => {
-
-    let concatOrigin = origin.latitude + "," + origin.longitude
-    let concatDest = destination.latitude + "," + destination.longitude
-    this.setState({
-        concatOrigin: concatOrigin,
-        concatDest: concatDest
-    });
-}
-
-CalculateFare = () => {
-    
-    let API_KEY = 'AIzaSyBIXZvDmynO3bT7i_Yck7knF5wgOVyj5Fk'
-    dataBase = firebase.firestore()
-    let user = firebase.auth().currentUser;
-    
-
-    
-
-    fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${this.state.concatOrigin}&destinations=${this.state.concatDest}&key=${API_KEY}`)
-        .then(response =>
-            
-            response.json())
-        .then(responseJson => {
-          console.log(responseJson)
-            let dsM = responseJson.rows[0].elements[0].distance.value
-            let CarPricePerMetre = 0.15065637
-            let CarPrice = Math.round(CarPricePerMetre * dsM)
-
-            let BasePrice = 200
-
-            //Check if car fare is greater than base Price
-            // If its not then set the carPrice as Base Price
-            // If its greater than base price, then set carPrice
-            // as the car fare Price
-            if (CarPrice > BasePrice){
+  let dsM = this.state.meter
+  let CarPricePerMetre = 0.15065637
+  let CarPrice = Math.round(CarPricePerMetre * dsM)
+  let BasePrice = 200
+  if (CarPrice > BasePrice){
               let DriverRef = dataBase.collection("drivers").doc(user.uid)
               
               let TripRefKey = dataBase.collection('TripKey').doc(this.state.PassengerDetails.ID)
@@ -194,11 +134,30 @@ CalculateFare = () => {
                 
                 
               })
+              .then(() => {
+                //Remove Driver From DriversWorking and Immediately 
+                
+                let user = firebase.auth().currentUser;
+                let DriverWorkingRef = dataBase.collection("DriversWorking").doc(user.uid)
+                DriverWorkingRef.delete()
+                console.log("Delete Homie")
+                //Remove NewRide Child from Driver
+                let Ref = dataBase.collection("drivers").doc(user.uid)
+                Ref.collection("NewRide").doc(this.state.PassengerDetails.ID).delete()
+              })
 
               this.setState({carPrice: CarPrice, CalculatingFare: false })
-              Alert.alert(`Amount For Your Trip is N${CarPrice}`)
+              
+              Alert.alert(
+                'Trip Fare',
+                `Amount For Your Trip is N${CarPrice}`,
+                [
+                  {text: 'OK', onPress: () => this.HomeScreen()}
+                ],
+                { cancelable: false }
+              )
             }
-            else {
+          else {
               let DriverRef = dataBase.collection("drivers").doc(user.uid)
               let TripRefKey = dataBase.collection('TripKey').doc(this.state.PassengerDetails.ID)
               
@@ -212,32 +171,123 @@ CalculateFare = () => {
                 Ride.update({Fare: BasePrice, Status: 'Completed'})
 
                 //Now Update Driver Ref with Trip
+                
                 DriverRef.collection('Trips').doc(RefID).set({Fare: BasePrice, DropOffAddress: this.state.PassengerDetails.DropOffAddress})
                
                 
               })
+              .then(() => {
+                //Remove Driver From DriversWorking and Immediately Put Him On
+                //DriversAvailable
+                let user = firebase.auth().currentUser;
+                let DriverWorkingRef = dataBase.collection("DriversWorking").doc(user.uid)
+                DriverWorkingRef.delete()
+
+                //Remove NewRide Child from Driver
+                let Ref = dataBase.collection("drivers").doc(user.uid)
+                Ref.collection("NewRide").doc(this.state.PassengerDetails.ID).delete()
+              })
               this.setState({carPrice: BasePrice, CalculatingFare: false })
-              Alert.alert(`Amount For Your Trip is N${BasePrice}`)
+              
+              Alert.alert(
+                'Trip Fare',
+                `Amount For Your Trip is N${BasePrice}`,
+                [
+                  {text: 'OK', onPress: () => this.HomeScreen()}
+                ],
+                { cancelable: false }
+              )
             }
-        })
 }
 
-async calculate() {
-  this.setState({CalculatingFare: true})
-  let PassengerOrigin = this.state.PassengerOrigin
-  let PassengerDestination = this.state.PassengerDestination
+calculateDistance(newCoordinate){
 
-  await this.mergeLocationCoordinates(PassengerOrigin, PassengerDestination)
+  
+  let start = this.state.prevLatLng
+  let end = newCoordinate
+  const haversine = require('haversine')
+  value = haversine(start, end, {unit: 'meter'})
+  /// We should know that this value give us the meters in decimal. That is 32.000
+
+  this.setState({
+    prevLatLng: newCoordinate,
+    meter: this.state.meter + value
+    })
+
+
+}
+
+watchDriverTrip(){
+  this.watchTrip = Geolocation.watchPosition(
+        (position) => {
+  
+          // For some reason navigator refused to work on this itel phone
+          let dist = { latitude: position.coords.latitude, longitude: position.coords.longitude }
+          this.calculateDistance(dist)
+
+          
+          console.log('Trip Has just started')
+          this.setState({
+            PassengerDestination: { latitude: position.coords.latitude, longitude: position.coords.longitude },
+            prevLatLng: { latitude: position.coords.latitude, longitude: position.coords.longitude },
+            MyLocationLat: position.coords.latitude,
+            MyLocationLong: position.coords.longitude,
+          });
+          
+          
+  
+        },
+        (error) => {
+  
+          Alert.alert(error.message)
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000, distanceFilter:100 },
+      );
+
+}
+
+componentDidMount(){
+
+  // Tell Passenger When You have arrived at their destination
+  
+  let user = firebase.auth().currentUser;
+  dataBase = firebase.firestore()
+
+  const geoFirestore = new GeoFirestore(dataBase);
+  const GeoRef = geoFirestore.collection('DriversWorking');
+
+  console.log('Did it create')
+  const DocumentData = {
+  Arrived: 'Yes'
+  } 
+        
+  GeoRef.doc(user.uid).update(DocumentData);
+
+
+}
+
+HomeScreen() {
+  console.log('Should go to Home Driver')
+  NavigationService.navigate("Main")
+}
+
+
+
+
+
+ calculate() {
+  
   this.CalculateFare()
 
 }
 
 LaunchRoute = () => {
     this.setState({visible: true})
+    
     let dropOff = this.state.PassengerDetails.DropOffAddress
     LaunchNavigator.setGoogleApiKey("AIzaSyBIXZvDmynO3bT7i_Yck7knF5wgOVyj5Fk");
     LaunchNavigator.navigate(dropOff)
-        .then(() => console.log("Launched navigator"))
+        .then(() => this.watchDriverTrip())
         .catch((err) => console.error("Error launching navigator: "+err));
 }
 
@@ -312,21 +362,7 @@ render () {
 
     const transform = [{scale: draggedValue}]
 
-    if (this.state.CalculatingFare) {
-      return (
-          <View
-              style={{
-                  flex: 1,
-                  backgroundColor: 'rgba(0,0,0, 0.9)',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-              }}
-          >
-              <ActivityIndicator size='large' color="#00ff00" />
-          </View>
-      );
-      
-  }
+    
 
         return (
         
@@ -411,7 +447,7 @@ render () {
           text="YES"
           bordered
           onPress={() => {
-            this.setState({ visible: false })
+            this.setState({ visible: false, CalculatingFare: true })
             this.calculate()
           }}
         />
@@ -420,7 +456,7 @@ render () {
   >
     <DialogContent>
     <Text>Arrived at DropOff ?</Text>
-    <Text>Click CANCEL To Keep Navigating, Or Click YES To Calculate Fare</Text>
+    <Text>Click CANCEL To Keep Navigating, Or Click YES To End Trip</Text>
     </DialogContent>
   </Dialog>
           
@@ -451,7 +487,7 @@ render () {
 
                 <TouchableOpacity style={{marginTop: 30, justifyContent: 'center', alignItems: "center"}} onPress={() => this.LaunchRoute()}>
                 <Icon name="directions" color={'red'} size={25}/>
-                <Text>Navigate</Text>
+                <Text>Start Trip</Text>
                 </TouchableOpacity>
             </View>
 

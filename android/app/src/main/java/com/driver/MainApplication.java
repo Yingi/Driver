@@ -14,7 +14,6 @@ import io.invertase.firebase.database.RNFirebaseDatabasePackage;
 import io.invertase.firebase.firestore.RNFirebaseFirestorePackage;
 import io.invertase.firebase.messaging.RNFirebaseMessagingPackage;
 import io.invertase.firebase.notifications.RNFirebaseNotificationsPackage;
-import com.arttitude360.reactnative.rngoogleplaces.RNGooglePlacesPackage;
 import com.airbnb.android.react.maps.MapsPackage;
 import com.react.rnspinkit.RNSpinkitPackage;
 import com.reactnative.ivpusic.imagepicker.PickerPackage;
@@ -49,7 +48,6 @@ public class MainApplication extends Application implements ReactApplication {
             new RNFirebaseFirestorePackage(),
             new RNFirebaseMessagingPackage(),
             new RNFirebaseNotificationsPackage(),
-            new RNGooglePlacesPackage(),
             new MapsPackage(),
             new RNSpinkitPackage(),
             new PickerPackage(),

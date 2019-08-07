@@ -247,7 +247,7 @@ export default class SignUp extends Component {
     
     
     user.updateProfile({
-      displayName: `${this.state.firstname} ${this.state.surname}`,
+      displayName: `${this.state.firstname} ${this.state.lastname}`,
       phoneNumber: `${this.state.phoneNumber}`
       
     }).then(() => {
